@@ -9,6 +9,7 @@ use App\Models\Girl;
 use App\Models\GroupOperator;
 use App\Models\Platform;
 use App\Models\SessionLog;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -101,6 +102,23 @@ class DashboardController extends Controller
             'totalPoints',
             'totalGoal'  // Added this line
         ));
+    }
+    public function getMonthlyTotals(Request $request)
+    {
+        $period = $request->input('period', 'current');
+
+        $currentDate = Carbon::now();
+        if ($period === 'previous') {
+            $currentDate = $currentDate->subMonth();
+        }
+
+        $monthlyTotals = Point::selectRaw('DATE_FORMAT(date, "%M") as month, SUM(points) as total_points, SUM(goal) as total_goal')
+            ->whereYear('date', $currentDate->year)
+            ->whereMonth('date', $currentDate->month)
+            ->groupBy('month')
+            ->get();
+
+        return $monthlyTotals;
     }
 
     private function operatorDashboard($user)

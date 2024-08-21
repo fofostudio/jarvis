@@ -26,7 +26,7 @@
                 <input type="date" class="form-control" id="date" name="date" value="{{ date('Y-m-d') }}"
                     required>
             </div>
-            <button type="submit" class="btn btn-primary">{{ __('admin.upload_and_preview') }}</button>
+            <button type="submit" class="btn btn-dark">{{ __('admin.upload_and_preview') }}</button>
         </form>
 
         <div id="previewContainer" class="mt-4" style="display: none;">

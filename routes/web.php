@@ -52,6 +52,7 @@ Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('group_operator', GroupOperatorController::class);
     Route::resource('points', PointController::class);
+    Route::get('/dashboard/monthly-totals', 'DashboardController@getMonthlyTotals');
     Route::get('/admin/session-logs', [SessionLogController::class, 'index'])->name('admin.session_logs.index');
     Route::post('/points/groups', [PointController::class, 'groups'])->name('points.groups');
     Route::post('/points/preview', [PointController::class, 'preview'])->name('points.preview');

@@ -88,7 +88,7 @@
                         @foreach ($assignedGirls as $girl)
                             <tr>
                                 <td>{{ $girl->internal_id }}</td>
-                                <td>{{ $girl->name }}</td>
+                                <td><strong>{{ $girl->name }}</strong></td>
                                 <td>{{ $girl->platform->name }}</td>
                                 <td>{{ $girl->username }}</td>
                                 <td>{{ $girl->password }}</td>

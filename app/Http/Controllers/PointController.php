@@ -10,6 +10,7 @@ use App\Models\GroupOperator;
 use App\Models\Platform;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
 class PointController extends Controller
@@ -18,7 +19,6 @@ class PointController extends Controller
     {
         $date = $request->input('date', now()->format('Y-m-d'));
         $userId = $request->input('user_id');
-        $shift = $request->input('shift');
         $groupId = $request->input('group_id');
 
         $query = Point::with(['user', 'group'])
@@ -26,10 +26,6 @@ class PointController extends Controller
 
         if ($userId) {
             $query->where('user_id', $userId);
-        }
-
-        if ($shift) {
-            $query->where('shift', $shift);
         }
 
         if ($groupId) {
@@ -43,7 +39,6 @@ class PointController extends Controller
             ->get();
 
         $groups = Group::orderBy('name')->get();
-        $shifts = ['morning', 'afternoon', 'night'];
 
         // Get all dates with points for the calendar
         $dates = Point::select('date')
@@ -56,7 +51,7 @@ class PointController extends Controller
         foreach ($dates as $date) {
             $dayShifts = Point::whereDate('date', $date)
                 ->pluck('shift')
-                ->unique();
+                ->toArray(); // Convert the collection to an array
 
             $status = count($dayShifts) === 3 ? 'complete' : (count($dayShifts) > 0 ? 'partial' : 'none');
 
@@ -66,15 +61,18 @@ class PointController extends Controller
             ];
         }
 
+        if ($request->ajax()) {
+            // Devolver solo la sección de registros de la vista
+            return view('points.records', compact('points'))->render();
+        }
+
         return view('points.index', compact(
             'points',
             'users',
             'groups',
-            'shifts',
             'calendarData',
             'date',
             'userId',
-            'shift',
             'groupId'
         ));
     }
@@ -102,7 +100,7 @@ class PointController extends Controller
             return response()->json(['groups' => $groupsWithOperators]);
         } catch (\Exception $e) {
             // Log the error and return a generic error message
-            \Log::error('Error in PointController@groups: ' . $e->getMessage());
+            Log::error('Error in PointController@groups: ' . $e->getMessage());
             return response()->json(['error' => 'An error occurred while fetching the groups.'], 500);
         }
     }
