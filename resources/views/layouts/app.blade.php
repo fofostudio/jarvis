@@ -13,12 +13,22 @@
 
 
     <!-- Fonts -->
+
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" />
+
     @include('includes.css_admin')
     <style>
         :root {
             --color-default: #000000;
+        }
+
+        body {
+            font-family: 'Figtree', sans-serif;
+        }
+
+        * {
+            font-family: 'Figtree', sans-serif !important;
         }
     </style>
 
@@ -34,7 +44,8 @@
             data-bs-keyboard="false" data-bs-backdrop="false">
             <div class="offcanvas-header">
                 <h5 class="offcanvas-title"><img src="{{ asset('img/logo-1710784068.png') }}" width="100" /></h5>
-                <button type="button" class="btn-close btn-close-custom text-white toggle-menu d-lg-none" data-bs-dismiss="offcanvas" aria-label="Close">
+                <button type="button" class="btn-close btn-close-custom text-white toggle-menu d-lg-none"
+                    data-bs-dismiss="offcanvas" aria-label="Close">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
@@ -61,8 +72,8 @@
                     <div class="flex-shrink-0 dropdown">
                         <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
                             id="dropdownUser2" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}"
-                                width="32" height="32" class="rounded-circle me-2">
+                            <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}" width="32"
+                                height="32" class="rounded-circle me-2">
                             <div class="d-none d-sm-block">
                                 <div class="font-medium text-base text-gray-800 dark:text-gray-200">
                                     {{ Auth::user()->name }}</div>

@@ -16,33 +16,67 @@ class PointController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Girl::with(['platform', 'group']);
+        $date = $request->input('date', now()->format('Y-m-d'));
+        $userId = $request->input('user_id');
+        $shift = $request->input('shift');
+        $groupId = $request->input('group_id');
 
-        // Aplicar filtro de búsqueda
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('internal_id', 'LIKE', "%{$search}%");
-            });
+        $query = Point::with(['user', 'group'])
+            ->whereDate('date', $date);
+
+        if ($userId) {
+            $query->where('user_id', $userId);
         }
 
-        // Aplicar filtro de plataforma
-        if ($request->has('platform')) {
-            $query->where('platform_id', $request->input('platform'));
+        if ($shift) {
+            $query->where('shift', $shift);
         }
 
-        // Aplicar filtro de grupo
-        if ($request->has('group')) {
-            $query->where('group_id', $request->input('group'));
+        if ($groupId) {
+            $query->where('group_id', $groupId);
         }
 
-        $girls = $query->get(); // Cambiado de paginate() a get()
+        $points = $query->get();
 
-        $groups = Group::withCount('girls')->get();
-        $platforms = Platform::withCount('girls')->get();
+        $users = User::where('name', 'not like', '000%')
+            ->orderBy('name')
+            ->get();
 
-        return view('girls.index', compact('girls', 'groups', 'platforms'));
+        $groups = Group::orderBy('name')->get();
+        $shifts = ['morning', 'afternoon', 'night'];
+
+        // Get all dates with points for the calendar
+        $dates = Point::select('date')
+            ->distinct()
+            ->orderBy('date')
+            ->pluck('date');
+
+        // Prepare calendar data
+        $calendarData = [];
+        foreach ($dates as $date) {
+            $dayShifts = Point::whereDate('date', $date)
+                ->pluck('shift')
+                ->unique();
+
+            $status = count($dayShifts) === 3 ? 'complete' : (count($dayShifts) > 0 ? 'partial' : 'none');
+
+            $calendarData[$date] = [
+                'status' => $status,
+                'shifts' => $dayShifts,
+            ];
+        }
+
+        return view('points.index', compact(
+            'points',
+            'users',
+            'groups',
+            'shifts',
+            'calendarData',
+            'date',
+            'userId',
+            'shift',
+            'groupId'
+        ));
     }
     public function create()
     {

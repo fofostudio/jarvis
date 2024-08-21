@@ -59,7 +59,10 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone = '-05:00'"
             ]) : [],
+            'timezone' => '-05:00', // Añade esta línea si no está presente
+
         ],
 
         'pgsql' => [
