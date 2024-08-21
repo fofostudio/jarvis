@@ -1,0 +1,138 @@
+@if (auth()->user()->role == 'super_admin' || auth()->user()->role == 'Administrador')
+    <li class="nav-item">
+        <a href="{{ route('dashboard') }}" class="nav-link text-truncate @if (request()->routeIs('dashboard')) active @endif">
+            <i class="bi-speedometer2 me-2"></i> {{ __('admin.dashboard') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('group_operator.index') }}"
+           class="nav-link text-truncate @if (request()->routeIs('group_operator.*')) active @endif">
+            <i class="bi-people-fill me-2"></i> {{ __('admin.group_operator_assignments') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('admin.session_logs.index') }}"
+           class="nav-link text-truncate @if(request()->routeIs('admin.session_logs.*')) active @endif">
+            <i class="bi-clock-history me-2"></i> {{ __('admin.session_logs') }}
+        </a>
+    </li>
+
+
+    <li class="nav-item">
+        <a href="{{ route('platforms.index') }}" class="nav-link text-truncate @if (request()->routeIs('platforms.*')) active @endif">
+            <i class="bi-display me-2"></i> {{ __('admin.platforms') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('platforms.index') }}" class="nav-link text-truncate @if (request()->routeIs('work_plans.*')) active @endif">
+            <i class="bi-display me-2"></i> {{ __('admin.work_plans') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('platforms.index') }}" class="nav-link text-truncate @if (request()->routeIs('operative_reports.*')) active @endif">
+            <i class="bi-display me-2"></i> {{ __('admin.operative_reports') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('girls.index') }}" class="nav-link text-truncate @if (request()->routeIs('girls.*')) active @endif">
+            <i class="bi-person-badge me-2"></i> {{ __('admin.girls') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('groups.index') }}" class="nav-link text-truncate @if (request()->routeIs('groups.*')) active @endif">
+            <i class="bi-people me-2"></i> {{ __('admin.groups') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('users.index') }}" class="nav-link text-truncate @if (request()->routeIs('users.*')) active @endif">
+            <i class="bi-person me-2"></i> {{ __('admin.users') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('points.index') }}" class="nav-link text-truncate @if (request()->routeIs('points.*')) active @endif">
+            <i class="bi-trophy me-2"></i> {{ __('admin.points') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('reports.index') }}" class="nav-link text-truncate @if (request()->routeIs('reports.*')) active @endif">
+            <i class="bi-file-earmark-text me-2"></i> {{ __('admin.reports') }}
+        </a>
+    </li>
+
+
+
+    @elseif (auth()->user()->role == 'operator')
+    <li class="nav-item">
+        <a href="{{ route('dashboard') }}" class="nav-link text-truncate @if (request()->routeIs('dashboard')) active @endif">
+            <i class="bi-speedometer2 me-2"></i> {{ __('admin.dashboard') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="#automatedTaskSubmenu" data-bs-toggle="collapse" class="nav-link text-truncate @if (request()->routeIs('automated_task*')) active @endif">
+            <i class="bi-robot me-2"></i> {{ __('operator.automated_task') }}
+            <i class="bi-chevron-down ms-auto"></i>
+        </a>
+        <ul class="collapse show nav flex-column ms-1" id="automatedTaskSubmenu" data-bs-parent="#menu">
+            @php
+                $userGroups = auth()->user()->groups;
+                $platformsWithGirls = collect();
+                foreach ($userGroups as $group) {
+                    $platformsWithGirls = $platformsWithGirls->merge($group->platforms()->whereHas('girls', function($query) use ($group) {
+                        $query->where('group_id', $group->id);
+                    })->get());
+                }
+                $platformsWithGirls = $platformsWithGirls->unique('id');
+            @endphp
+
+            @forelse($platformsWithGirls as $platform)
+                <li class="nav-item">
+                    <a href="{{ route('automated_task.platform', $platform->id) }}" class="nav-link text-truncate @if (request()->is('automated_task/platform/' . $platform->id)) active @endif">
+                        <i class="bi-circle me-2 small"></i> {{ $platform->name }}
+                    </a>
+                </li>
+            @empty
+                <li class="nav-item">
+                    <span class="nav-link text-truncate text-muted">
+                        <i class="bi-exclamation-circle me-2 small"></i> {{ __('operator.no_platforms_assigned') }}
+                    </span>
+                </li>
+            @endforelse
+        </ul>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('my_points') }}" class="nav-link text-truncate @if (request()->routeIs('my_points')) active @endif">
+            <i class="bi-trophy me-2"></i> {{ __('operator.my_points') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('my_logins') }}" class="nav-link text-truncate @if (request()->routeIs('my_logins')) active @endif">
+            <i class="bi-clock-history me-2"></i> {{ __('operator.my_logins') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('my_operative_reports') }}" class="nav-link text-truncate @if (request()->routeIs('my_operative_reports')) active @endif">
+            <i class="bi-file-text me-2"></i> {{ __('operator.my_operative_reports') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('my_work_plan') }}" class="nav-link text-truncate @if (request()->routeIs('my_work_plan')) active @endif">
+            <i class="bi-calendar-check me-2"></i> {{ __('operator.my_work_plan') }}
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a href="{{ route('my_work_plan') }}" class="nav-link text-truncate @if (request()->routeIs('settings')) active @endif">
+            <i class="bi-gear me-2"></i> {{ __('operator.settings') }}
+        </a>
+    </li>
+@endif

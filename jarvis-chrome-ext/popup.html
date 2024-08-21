@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Jarvis Chrome Ext | FofoStudio</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="login-wrap">
+        <div class="login-html">
+            <div id="loginForm">
+                <div class="login-form">
+                    <div class="sign-in-htm">
+                        <div class="group">
+                            <input id="email" type="email" class="input" placeholder="Email">
+                        </div>
+                        <div class="group">
+                            <input id="password" type="password" class="input" data-type="password" placeholder="Password">
+                        </div>
+                        <div class="group">
+                            <input type="submit" class="button" value="Sign In" id="loginButton">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="userInfo" style="display: none;">
+                <h2>Hola, <span id="loggedInUser"></span>!</h2>
+                <p id="userGroups"></p>
+                <p id="userPlatforms"></p>
+                <button class="button"  id="logoutButton">Cerrar Sesion</button>
+            </div>
+            <div id="taskButtons"></div>
+            <div id="status"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Powered by: Fofo Studio</p>
+    </div>
+    <script type="module" src="popup.js"></script>
+</body>
+</html>

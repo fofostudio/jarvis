@@ -1,0 +1,237 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Girl;
+use App\Models\Point;
+use App\Models\User;
+use App\Models\Group;
+use App\Models\GroupOperator;
+use App\Models\Platform;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+
+class PointController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Girl::with(['platform', 'group']);
+
+        // Aplicar filtro de búsqueda
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('internal_id', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Aplicar filtro de plataforma
+        if ($request->has('platform')) {
+            $query->where('platform_id', $request->input('platform'));
+        }
+
+        // Aplicar filtro de grupo
+        if ($request->has('group')) {
+            $query->where('group_id', $request->input('group'));
+        }
+
+        $girls = $query->get(); // Cambiado de paginate() a get()
+
+        $groups = Group::withCount('girls')->get();
+        $platforms = Platform::withCount('girls')->get();
+
+        return view('girls.index', compact('girls', 'groups', 'platforms'));
+    }
+    public function create()
+    {
+        $operators = User::where('role', 'operator')->get();
+        $groupOperators = GroupOperator::with(['group', 'user'])->get();
+        $shiftOptions = ['morning', 'afternoon', 'night'];
+        return view('points.create', compact('operators', 'groupOperators', 'shiftOptions'));
+    }
+    public function groups(Request $request)
+    {
+        $shift = $request->input('shift');
+        $groups = Group::all();
+        $groupsWithOperators = [];
+
+        try {
+            foreach ($groups as $group) {
+                $operator = $group->operators()->wherePivot('shift', $shift)->first();
+                if ($operator) {
+                    $groupsWithOperators[] = $group;
+                }
+            }
+
+            return response()->json(['groups' => $groupsWithOperators]);
+        } catch (\Exception $e) {
+            // Log the error and return a generic error message
+            \Log::error('Error in PointController@groups: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while fetching the groups.'], 500);
+        }
+    }
+    public function preview(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'pointsFile' => 'required|file',
+            'shift' => 'required|in:morning,afternoon,night',
+            'date' => 'required|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()]);
+        }
+
+        $file = $request->file('pointsFile');
+        $shift = $request->input('shift');
+        $date = $request->input('date');
+
+        $content = file_get_contents($file->getRealPath());
+        $lines = explode("\n", $content);
+
+        $preview = [];
+        $allOperators = User::where('role', 'operator')->orderBy('name')->get();
+
+        foreach ($lines as $line) {
+            $data = str_getcsv($line);
+            if (count($data) !== 3) {
+                continue; // Skip invalid lines
+            }
+
+            $groupName = trim($data[0]);
+            $points = (int)trim($data[1]);
+            $goal = (int)trim($data[2]);
+
+            $group = Group::where('name', $groupName)->first();
+            if (!$group) {
+                continue; // Skip if group not found
+            }
+
+            $assignedOperator = $group->operators()->wherePivot('shift', $shift)->first();
+
+            $preview[] = [
+                'group' => $groupName,
+                'group_id' => $group->id,
+                'points' => $points,
+                'goal' => $goal,
+                'assigned_operator_id' => $assignedOperator ? $assignedOperator->id : null,
+                'operators' => $allOperators->map(function ($operator) {
+                    return ['id' => $operator->id, 'name' => $operator->name];
+                }),
+            ];
+        }
+
+        return response()->json(['success' => true, 'preview' => $preview]);
+    }
+
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'shift' => 'required|in:morning,afternoon,night',
+            'date' => 'required|date',
+            'points' => 'required|array',
+            'goals' => 'required|array',
+            'operators' => 'required|array',
+            'points.*' => 'required|numeric|min:0',
+            'goals.*' => 'required|numeric|min:0',
+            'operators.*' => 'required|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()]);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $date = $request->input('date');
+            $shift = $request->input('shift');
+            $points = $request->input('points');
+            $goals = $request->input('goals');
+            $operators = $request->input('operators');
+
+            foreach ($points as $groupId => $pointValue) {
+                Point::create([
+                    'user_id' => $operators[$groupId],
+                    'group_id' => $groupId,
+                    'date' => $date,
+                    'shift' => $shift,
+                    'points' => $pointValue,
+                    'goal' => $goals[$groupId],
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Points saved successfully.',
+                'redirect' => route('points.index')
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while saving points: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    public function myPoints()
+    {
+        $user = auth()->user();
+        $points = $user->points; // Asumiendo que tienes una relación 'points' en tu modelo User
+        return view('operator.my_points', compact('points'));
+    }
+
+    public function show(Point $point)
+    {
+        return view('points.show', compact('point'));
+    }
+
+    public function edit(Point $point)
+    {
+        $users = User::where('role', 'operator')->get();
+        $groups = Group::all();
+        return view('points.edit', compact('point', 'users', 'groups'));
+    }
+
+    public function update(Request $request, Point $point)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'group_id' => 'required|exists:groups,id',
+            'shift' => 'required|in:morning,afternoon,night',
+            'date' => 'required|date',
+            'points' => 'required|integer',
+            'goal' => 'required|integer',
+        ]);
+
+        $point->update($validated);
+
+        return redirect()->route('points.index')->with('success', 'Points updated successfully.');
+    }
+
+    public function destroy(Point $point)
+    {
+        $point->delete();
+
+        return redirect()->route('points.index')->with('success', 'Points deleted successfully.');
+    }
+    public function dashboard()
+    {
+        $user = auth()->user();
+
+        if ($user->role === 'operator') {
+            $points = Point::where('user_id', $user->id)->get();
+        } else {
+            $points = Point::all();
+        }
+
+        $totalPoints = $points->sum('points');
+        $averagePoints = $points->avg('points');
+
+        return view('points.dashboard', compact('points', 'totalPoints', 'averagePoints'));
+    }
+}
