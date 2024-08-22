@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminOperativeReportController;
 use App\Http\Controllers\Admin\SessionLogController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -14,7 +15,9 @@ use App\Http\Controllers\OperativeReportController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\PointController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WorkPlanController;
 
@@ -43,21 +46,42 @@ Route::middleware('auth')->group(function () {
     Route::get('/group-points', [OperatorController::class, 'groupPoints']);
     Route::get('/my-config', [OperatorController::class, 'mySetings'])->name('my-settings');
     Route::get('/my-operative-reports', [OperativeReportController::class, 'myReports'])->name('my-operative-reports');
-    Route::resource('operative-reports', OperativeReportController::class);
-    Route::post('/operative-reports/{operativeReport}/review', [OperativeReportController::class, 'reviewReport'])->name('operative-reports.review');
+    Route::group(['prefix' => 'operative-reports', 'as' => 'operative-reports.'], function () {
+        // GET /operative-reports (index)
+        Route::post('/', [OperativeReportController::class, 'store'])->name('store');
+        // GET /operative-reports/create (create)
+        Route::get('/create', [OperativeReportController::class, 'create'])->name('create');
+
+
+        // GET /operative-reports/{operative_report}/edit (edit)
+        Route::get('/{operative_report}/edit', [OperativeReportController::class, 'edit'])->name('edit');
+
+        // PUT/PATCH /operative-reports/{operative_report} (update)
+        Route::match(['put', 'patch'], '/{operative_report}', [OperativeReportController::class, 'update'])->name('update');
+
+        // DELETE /operative-reports/{operative_report} (destroy)
+        Route::delete('/{operative_report}', [OperativeReportController::class, 'destroy'])->name('destroy');
+    });    Route::post('/operative-reports/{operativeReport}/review', [OperativeReportController::class, 'reviewReport'])->name('operative-reports.review');
     Route::get('/operative-reports/{operativeReport}/download', [OperativeReportController::class, 'downloadFile'])->name('operative-reports.download');
     Route::get('/my-work-plan', [WorkPlanController::class, 'myPlan'])->name('my_work_plan');
     Route::get('/automated-task/platform/{platform}', [AutomatedTaskController::class, 'showPlatformTasks'])
         ->name('automated_task.platform');
-    });
+    Route::resource('products', ProductController::class);
+    Route::resource('sales', SaleController::class);
+});
 
 Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::resource('platforms', PlatformController::class);
     Route::resource('girls', GirlController::class);
     Route::resource('groups', GroupController::class);
     Route::resource('users', UserController::class);
+    Route::get('users-admin', [UserController::class, 'indexadmin'])->name('admin.users');
     Route::resource('group_operator', GroupOperatorController::class);
     Route::resource('points', PointController::class);
+    Route::get('/admin-operative-reports', [AdminOperativeReportController::class, 'index'])->name('operative-reports.index');
+    Route::get('/operative-reports/{report}', [AdminOperativeReportController::class, 'show'])->name('operative-reports.show');
+    Route::patch('/operative-reports/{report}/update-status', [AdminOperativeReportController::class, 'updateStatus'])->name('operative-reports.update-status');
+    Route::delete('/operative-reports/{report}', [AdminOperativeReportController::class, 'destroy'])->name('operative-reports.destroy');
     Route::get('/dashboard/monthly-totals', [DashboardController::class, 'getMonthlyTotals'])->name('dashboard.monthly-totals');
     Route::get('/admin/session-logs', [SessionLogController::class, 'index'])->name('admin.session_logs.index');
     Route::post('/points/groups', [PointController::class, 'groups'])->name('points.groups');

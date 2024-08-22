@@ -173,7 +173,17 @@
                                 <td>{{ $point->group->name ?? 'N/A' }}</td>
                                 <td>{{ $point->date }}</td>
                                 <td>{{ $point->points }}</td>
-                                <td>{{ $point->shift }}</td>
+                                <td>
+                                    @if($point->shift == 'morning')
+    Mañana
+@elseif($point->shift == 'afternoon')
+    Tarde
+@elseif($point->shift == 'night')
+    Noche
+@else
+    {{ $point->shift }}
+@endif
+                                    </td>
                             </tr>
                         @endforeach
                     </tbody>

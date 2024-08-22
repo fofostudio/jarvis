@@ -14,6 +14,11 @@ class UserController extends Controller
         $users = User::where('role', 'operator')->paginate(40);
         return view('users.index', compact('users'));
     }
+    public function indexadmin()
+    {
+        $users = User::whereIn('role', ['cooperative', 'admin'])->paginate(40);
+        return view('users.index', compact('users'));
+    }
 
     public function create()
     {

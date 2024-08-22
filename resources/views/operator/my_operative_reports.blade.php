@@ -68,16 +68,16 @@
                                         <div class="row">
                                             <div class="col">
                                                 <label for="gentleman_code[]">Código Caballero</label>
-                                                <input type="text" class="form-control" name="gentleman_code[]" >
+                                                <input type="text" class="form-control" name="gentleman_code[]">
                                             </div>
                                             <div class="col">
                                                 <label for="lady_code[]">Código Dama</label>
-                                                <input type="text" class="form-control" name="lady_code[]" >
+                                                <input type="text" class="form-control" name="lady_code[]">
                                             </div>
                                         </div>
                                         <div class="form-group">
                                             <label for="conversation_summary[]">Resumen Conversación</label>
-                                            <textarea name="conversation_summary[]" class="form-control" ></textarea>
+                                            <textarea name="conversation_summary[]" class="form-control"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -180,11 +180,11 @@
                                                     </td>
                                                     <td>
                                                         @if ($report->is_approved === null)
-                                                            <span class="badge badge-warning">Pendiente</span>
+                                                            <span class="badge badge-warning bg-warning">Pendiente</span>
                                                         @elseif($report->is_approved)
-                                                            <span class="badge badge-success">Aprobado</span>
+                                                            <span class="badge badge-success bg-success">Aprobado</span>
                                                         @else
-                                                            <span class="badge badge-danger">Rechazado</span>
+                                                            <span class="badge badge-danger bg-danger">Rechazado</span>
                                                         @endif
                                                     </td>
                                                     <td>
@@ -192,14 +192,16 @@
                                                             data-bs-target="#reportModal{{ $report->id }}">
                                                             Ver
                                                         </button>
-                                                        <form id="delete-form-{{ $report->id }}"
-                                                            action="{{ route('operative-reports.destroy', $report->id) }}"
-                                                            method="POST" style="display: inline-block;">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="button" class="btn btn-danger btn-sm"
-                                                                onclick="confirmDelete({{ $report->id }})">Eliminar</button>
-                                                        </form>
+                                                        @if ($report->is_approved === null)
+                                                            <form id="delete-form-{{ $report->id }}"
+                                                                action="{{ route('operative-reports.destroy', $report->id) }}"
+                                                                method="POST" style="display: inline-block;">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="button" class="btn btn-danger btn-sm"
+                                                                    onclick="confirmDelete({{ $report->id }})">Eliminar</button>
+                                                            </form>
+                                                        @endif
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -384,7 +386,8 @@
                         </div>
                     </div>
                 `;
-                document.getElementById('conversations').insertAdjacentHTML('beforeend', conversationTemplate);
+                document.getElementById('conversations').insertAdjacentHTML('beforeend',
+                    conversationTemplate);
             });
 
             var editor = CKEDITOR.replace('report_content');
@@ -398,4 +401,4 @@
             });
         });
     </script>
-    @endsection
+@endsection

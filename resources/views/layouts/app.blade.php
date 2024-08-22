@@ -27,92 +27,143 @@
             font-family: 'Figtree', sans-serif;
         }
 
+        .mobile-warning-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 0, 0, 0.9);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
 
+        .mobile-warning-overlay h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .mobile-warning-overlay p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .logo-jarvis {
+            width: 200px;
+            /* Tamaño predeterminado para escritorio */
+        }
+
+        @media (max-width: 768px) {
+            .logo-jarvis {
+                width: 100px;
+                /* Tamaño para dispositivos móviles */
+            }
+        }
     </style>
 
     @yield('css')
 </head>
 
 <body>
-    <div class="overlay" data-bs-toggle="offcanvas" data-bs-target="#sidebar-nav"></div>
-    <div class="popout font-default"></div>
-
-    <main>
-        <div class="offcanvas offcanvas-start sidebar bg-dark text-white" tabindex="-1" id="sidebar-nav"
-            data-bs-keyboard="false" data-bs-backdrop="false">
-            <div class="offcanvas-header">
-                <h5 class="offcanvas-title"><img src="{{ asset('img/logo-1710784068.png') }}" width="100" /></h5>
-                <button type="button" class="btn-close btn-close-custom text-white toggle-menu d-lg-none"
-                    data-bs-dismiss="offcanvas" aria-label="Close">
-                    <i class="bi bi-x-lg"></i>
+    @if (auth()->check() && auth()->user()->role == 'operator' && \Jenssegers\Agent\Facades\Agent::isMobile())
+        <div class="mobile-warning-overlay">
+            <h1>Acceso no permitido</h1>
+            <p>Jarvis no es accesible vía móvil para operadores.</p>
+            <p>Por favor, accede desde un dispositivo de escritorio.</p>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn btn-dark">
+                    {{ __('admin.LogOut') }}
                 </button>
-            </div>
-            <div class="offcanvas-body px-0 scrollbar">
-                <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-start list-sidebar" id="menu">
-                    <!-- Aquí va el contenido del sidebar -->
-                    @include('layouts.sidebar')
-                </ul>
-            </div>
+            </form>
         </div>
+    @else
+        <div class="overlay" data-bs-toggle="offcanvas" data-bs-target="#sidebar-nav"></div>
+        <div class="popout font-default"></div>
 
-        <header class="py-3 mb-3 shadow-custom bg-dark">
-            <div class="container-fluid px-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <a class="toggle-menu d-block d-lg-none text-dark fs-3" data-bs-toggle="offcanvas"
-                        data-bs-target="#sidebar-nav" href="#">
-                        <i class="bi-list"></i>
-                    </a>
+        <main>
+            <div class="offcanvas offcanvas-start sidebar bg-dark text-white" tabindex="-1" id="sidebar-nav"
+                data-bs-keyboard="false" data-bs-backdrop="false">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title"><img src="{{ asset('images/logojarvis.svg') }}" class="logo-jarvis" alt="Logo Jarvis">
+                    </h5>
+                    <button type="button" class="btn-close btn-close-custom text-white toggle-menu d-lg-none"
+                        data-bs-dismiss="offcanvas" aria-label="Close">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div class="offcanvas-body px-0 scrollbar">
+                    <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-start list-sidebar" id="menu">
+                        <!-- Aquí va el contenido del sidebar -->
+                        @include('layouts.sidebar')
+                    </ul>
+                </div>
+            </div>
 
-                    <a class="text-dark animate-up-2" href="{{ url('/') }}">
-                        {{ trans('admin.view_site') }} <i class="bi-arrow-up-right"></i>
-                    </a>
-
-                    <div class="flex-shrink-0 dropdown">
-                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
-                            id="dropdownUser2" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}" width="32"
-                                height="32" class="rounded-circle me-2">
-                            <div class="d-none d-sm-block">
-                                <div class="font-medium text-base text-gray-800 dark:text-gray-200">
-                                    {{ Auth::user()->name }}</div>
-                                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-                            </div>
+            <header class="py-3 mb-3 shadow-custom bg-dark">
+                <div class="container-fluid px-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a class="toggle-menu d-block d-lg-none fs-3" data-bs-toggle="offcanvas"
+                            data-bs-target="#sidebar-nav" href="#">
+                            <i class="bi-list"></i>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser2">
-                            <li>
-                                <a class="dropdown-item" href="{{ route('profile.edit') }}">
-                                    {{ __('admin.Profile') }}
-                                </a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item">
-                                        {{ __('admin.LogOut') }}
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
+
+                        <a class="animate-up-2" href="{{ url('/') }}">
+                        </a>
+
+                        <div class="flex-shrink-0 dropdown">
+                            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
+                                id="dropdownUser2" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}" width="32"
+                                    height="32" class="rounded-circle me-2">
+                                <div class="d-none d-sm-block">
+                                    <div class="font-medium text-base text-gray-800 dark:text-gray-200">
+                                        {{ Auth::user()->name }}</div>
+                                    <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser2">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('profile.edit') }}">
+                                        {{ __('admin.Profile') }}
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item">
+                                            {{ __('admin.LogOut') }}
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col min-vh-100 admin-container p-4">
+                        @yield('content')
                     </div>
                 </div>
             </div>
-        </header>
 
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col min-vh-100 admin-container p-4">
-                    @yield('content')
-                </div>
-            </div>
-        </div>
-
-        <footer class="admin-footer px-4 py-3 bg-white shadow-custom">
-            &copy; jarvis X | FofoStudio - {{ date('Y') }}
-        </footer>
-    </main>
+            <footer class="admin-footer px-4 py-3 bg-white shadow-custom">
+                &copy; Jarvis Bot V7.0 - {{ date('Y') }}
+            </footer>
+        </main>
+    @endif
 
     <!-- Scripts -->
     <script src="{{ asset('/js/core.min.js') }}"></script>

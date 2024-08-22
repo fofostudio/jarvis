@@ -28,6 +28,7 @@ class OperativeReport extends Model
         'conversation_data' => 'array',
     ];
 
+
     /**
      * Get the user that owns the operative report.
      */
@@ -77,11 +78,10 @@ class OperativeReport extends Model
     public function getConversationsAttribute()
     {
         if ($this->report_type === 'conversational') {
-            return json_decode($this->content, true);
+            return $this->conversation_data ?: json_decode($this->content, true);
         }
         return null;
     }
-
     /**
      * Get the report status.
      */

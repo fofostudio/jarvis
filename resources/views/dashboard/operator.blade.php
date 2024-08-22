@@ -28,7 +28,15 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h3 class="h4 mb-0 text-gray-800">{{ $assignedGroup->name ?? 'N/A' }}</h3>
-                                <p class="mb-0 text-muted">Jornada: {{ $assignedShift }}</p>
+                                <p class="mb-0 text-muted">Jornada: @if($assignedShift == 'Morning')
+                                    Mañana
+                                @elseif($assignedShift == 'Afternoon')
+                                    Tarde
+                                @elseif($assignedShift == 'Night')
+                                    Noche
+                                @else
+                                    {{ $assignedShift }}
+                                @endif</p>
                             </div>
                             <div class="d-flex align-items-center">
                                 <label class="toggle-switch mr-3">
@@ -108,6 +116,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         var chartData = @json($chartData);
     </script>
@@ -129,12 +139,14 @@
                         label: 'Points',
                         data: chartData.map(item => item.points),
                         borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
+                        tension: 0.1,
+                        fill: true
                     }, {
                         label: 'Goal',
                         data: chartData.map(item => item.goal),
                         borderColor: 'rgb(255, 99, 132)',
-                        tension: 0.1
+                        tension: 0.1,
+                        fill: true
                     }]
                 },
                 options: {
@@ -152,37 +164,46 @@
             const breakToggle = document.getElementById('breakToggle');
             const breakTimer = document.getElementById('breakTimer');
             let timerInterval;
+            let breakStartTime;
+            let isBreakFinished = false;
 
             function updateTimerDisplay(seconds) {
-                const minutes = Math.floor(Math.abs(seconds) / 60);
-                const remainingSeconds = Math.abs(seconds) % 60;
-                breakTimer.value = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+                const isNegative = seconds < 0;
+                seconds = Math.abs(seconds);
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const remainingSeconds = seconds % 60;
+                breakTimer.value =
+                    `${isNegative ? '-' : ''}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
             }
 
             function updateTimerStyle(seconds) {
                 breakTimer.classList.remove('active', 'warning', 'danger', 'finished');
                 if (seconds > 300) breakTimer.classList.add('active');
                 else if (seconds > 60) breakTimer.classList.add('warning');
-                else if (seconds > -5) breakTimer.classList.add('danger');
+                else if (seconds > 0) breakTimer.classList.add('danger');
                 else breakTimer.classList.add('finished');
             }
 
             function startBreakTimer(startTime) {
                 clearInterval(timerInterval);
-                const endTime = new Date(startTime).getTime() + 30 * 60 * 1000;
+                breakStartTime = new Date(startTime).getTime();
+                const endTime = breakStartTime + 30 * 60 * 1000;
 
                 function updateTimer() {
                     const now = new Date().getTime();
                     const distance = endTime - now;
                     const seconds = Math.floor(distance / 1000);
 
+                    if (seconds <= 0 && !isBreakFinished) {
+                        isBreakFinished = true;
+                    }
+
                     updateTimerDisplay(seconds);
                     updateTimerStyle(seconds);
 
-                    if (seconds <= -5) {
-                        clearInterval(timerInterval);
-                        breakToggle.checked = false;
-                        breakToggle.disabled = true;
+                    if (isBreakFinished) {
+                        breakToggle.disabled = false;
                     }
                 }
 
@@ -195,19 +216,43 @@
                     .then(response => response.json())
                     .then(data => {
                         breakToggle.checked = data.is_on_break;
-                        breakToggle.disabled = data.break_taken && !data.is_on_break;
+                        breakToggle.disabled = false;
 
                         if (data.is_on_break) {
                             startBreakTimer(data.start_time);
-                        } else if (data.break_taken) {
-                            updateTimerDisplay(0);
-                            updateTimerStyle(-5);
                         } else {
                             updateTimerDisplay(1800);
                             updateTimerStyle(1800);
+                            isBreakFinished = false;
                         }
                     })
                     .catch(error => console.error('Error:', error));
+            }
+
+            function logOvertime(overtime) {
+                fetch('/log-overtime', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            overtime: overtime
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to log overtime');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Overtime logged successfully:', data);
+                    })
+                    .catch(error => {
+                        console.error('Error logging overtime:', error);
+                    });
             }
 
             breakToggle.addEventListener('change', function() {
@@ -215,15 +260,14 @@
                 fetch(`/${action}`, {
                         method: 'POST',
                         headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
-                                'content'),
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
                         }
                     })
                     .then(response => {
                         if (!response.ok) {
-                            throw new Error('Network response was not ok');
+                            throw new Error('Ya has tomado tu Break Hoy');
                         }
                         return response.json();
                     })
@@ -235,15 +279,26 @@
                             startBreakTimer(data.start_time);
                         } else {
                             clearInterval(timerInterval);
-                            updateTimerDisplay(0);
-                            updateTimerStyle(-5);
-                            this.disabled = true;
+                            const breakEndTime = new Date().getTime();
+                            const breakDuration = Math.floor((breakEndTime - breakStartTime) / 1000);
+                            const overtime = Math.max(0, breakDuration - 1800);
+                            updateTimerDisplay(breakDuration - 1800);
+                            updateTimerStyle(0);
+                            isBreakFinished = false;
+
+                            if (overtime > 0) {
+                                logOvertime(overtime);
+                            }
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
                         this.checked = !this.checked; // Revert the toggle
-                        alert(`Error: ${error.message}`);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: `Error: ${error.message}`,
+                        });
                     });
             });
 

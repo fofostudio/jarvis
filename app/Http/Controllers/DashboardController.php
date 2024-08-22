@@ -22,7 +22,7 @@ class DashboardController extends Controller
         $user = Auth::user();
         $role = $user->role;
 
-        if ($role == 'super_admin' || $role == 'Administrador') {
+        if ($role == 'super_admin' || $role == 'admin') {
             return $this->superAdminDashboard();
         } elseif ($role == 'operator') {
             return $this->operatorDashboard($user);
@@ -45,14 +45,15 @@ class DashboardController extends Controller
 
         $shifts = ['morning', 'afternoon', 'night'];
         $selectedShift = request('shift', 'morning');
-
+        $latestPointsDate = Point::max('date');
         // Data for daily group chart
         $dailyGroupData = Point::select('group_id', DB::raw('SUM(points) as total_points'), DB::raw('SUM(goal) as total_goal'))
-            ->whereDate('date', Carbon::today())
-            ->where('shift', $selectedShift)
-            ->groupBy('group_id')
-            ->with('group')
-            ->get();
+        ->whereDate('date', $latestPointsDate)
+        ->where('shift', $selectedShift)
+        ->groupBy('group_id')
+        ->with('group')
+        ->get();
+
 
         // Data for total points by day chart
         $dailyTotalData = Point::select('date', DB::raw('SUM(points) as total_points'), DB::raw('SUM(goal) as total_goal'))
@@ -110,6 +111,7 @@ class DashboardController extends Controller
             'selectedShift',
             'dailyGroupData',
             'dailyTotalData',
+            'latestPointsDate', // Añadir esta nueva variable
             'todayPoints',
             'yesterdayPoints',
             'thisMonthPoints',

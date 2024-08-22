@@ -32,7 +32,7 @@
                                         <div class="row">
                                             @foreach ($breakChunk as $break)
                                                 <div class="col-md-3 mb-3">
-                                                    <div class="card h-100">
+                                                    <div class="card shadow h-100">
                                                         <div class="card-body">
                                                             <h5 class="card-title">{{ $break->user->name }}</h5>
                                                             <h6 class="card-subtitle mb-2 text-muted">
@@ -219,12 +219,16 @@
                 </div>
             </div>
         </div>
+
         <div class="row">
             <!-- Daily Group Chart -->
-            <div class="col-xl-4 col-lg-4">
+            <div class="col-xl-9 col-lg-7">
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.daily_group_points') }}</h6>
+                        <div class="text-xs font-weight-bold text-primary">
+                            Último registro: {{ \Carbon\Carbon::parse($latestPointsDate)->format('d/m/Y') }}
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="chart-bar">
@@ -233,25 +237,9 @@
                     </div>
                 </div>
             </div>
-
-
-
-            <!-- Weekly Total Points Chart -->
-            <div class="col-xl-4 col-lg-4">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.weekly_total_points') }}</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-bar">
-                            <canvas id="weeklyTotalChart" data-chart-data="{{ json_encode($dailyTotalData) }}"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <!-- New Girls per Platform Pie Chart -->
 
-            <div class="col-xl-4 col-lg-4">
+            <div class="col-xl-3 col-lg-4">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.girls_per_platform') }}</h6>
@@ -264,9 +252,79 @@
                         </div>
                     </div>
                 </div>
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.weekly_total_points') }}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-bar">
+                            <canvas id="weeklyTotalChart" data-chart-data="{{ json_encode($dailyTotalData) }}"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
             <!-- Monthly Total Points vs Goals Chart -->
 
+        </div>
+
+        @php
+            // Calcular el total de puntos del mes actual
+            $currentMonthTotalPoints = \App\Models\Point::whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->sum('points');
+
+            // Calcular el total de puntos del mes anterior
+            $lastMonthTotalPoints = \App\Models\Point::whereMonth('created_at', now()->subMonth()->month)
+                ->whereYear('created_at', now()->subMonth()->year)
+                ->sum('points');
+
+            // Calcular el total acumulado de todos los puntos
+            $allTimeTotalPoints = \App\Models\Point::sum('points');
+
+            // Calcular el porcentaje de cambio
+            $percentageChange =
+                $lastMonthTotalPoints != 0
+                    ? (($currentMonthTotalPoints - $lastMonthTotalPoints) / $lastMonthTotalPoints) * 100
+                    : 100;
+        @endphp
+
+        <!-- New Total Points Comparison Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.total_points_comparison') }}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    {{ __('admin.current_month_total') }}
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ number_format($currentMonthTotalPoints) }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    {{ __('admin.last_month_total') }}
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ number_format($lastMonthTotalPoints) }}</div>
+                                <div class="text-xs {{ $percentageChange >= 0 ? 'text-success' : 'text-danger' }}">
+                                    {{ $percentageChange >= 0 ? '+' : '' }}{{ number_format($percentageChange, 2) }}%
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    {{ __('admin.all_time_total') }}
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ number_format($allTimeTotalPoints) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="row">
             <div class="col-12">
@@ -288,6 +346,8 @@
                 </div>
             </div>
         </div>
+
+
 
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

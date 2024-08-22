@@ -32,17 +32,6 @@
             @enderror
         </div>
 
-        <div class="mb-3">
-            <label for="role" class="form-label">{{ __('admin.role') }}</label>
-            <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required>
-                <option value="operator" {{ old('role', $user->role) == 'operator' ? 'selected' : '' }}>{{ __('admin.operator') }}</option>
-                <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>{{ __('admin.admin') }}</option>
-                <option value="super_admin" {{ old('role', $user->role) == 'super_admin' ? 'selected' : '' }}>{{ __('admin.super_admin') }}</option>
-            </select>
-            @error('role')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
 
         <div class="mb-3">
             <label for="avatar" class="form-label">{{ __('admin.avatar') }}</label>
@@ -59,14 +48,6 @@
             <label for="identification" class="form-label">{{ __('admin.identification') }}</label>
             <input type="text" class="form-control @error('identification') is-invalid @enderror" id="identification" name="identification" value="{{ old('identification', $user->identification) }}" required>
             @error('identification')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-
-        <div class="mb-3">
-            <label for="username" class="form-label">{{ __('admin.username') }}</label>
-            <input type="text" class="form-control @error('username') is-invalid @enderror" id="username" name="username" value="{{ old('username', $user->username) }}" required>
-            @error('username')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>

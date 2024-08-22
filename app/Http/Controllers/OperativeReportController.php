@@ -39,7 +39,6 @@ class OperativeReportController extends Controller
      */
     public function index()
     {
-        $this->authorize('viewAny', OperativeReport::class);
         $reports = OperativeReport::with('user')->orderBy('report_date', 'desc')->get();
         return view('admin.operative_reports.index', compact('reports'));
     }

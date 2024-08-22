@@ -7,6 +7,8 @@ return [
     'my_operative_reports' => 'Reportes Operativos',
     'my_work_plan' => 'Plan de Trabajo',
     'settings' => 'Configuracion',
+    'my_foodItems' => 'Cooperativa',
+    'FoodItems'  => 'Tienda//Cooperativa',
 
 
 ];

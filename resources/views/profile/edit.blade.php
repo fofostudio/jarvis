@@ -41,7 +41,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="email" class="form-label">{{ __('admin.email') }}</label>
-                                <input id="email" name="email" type="email" class="form-control" value="{{ old('email', $user->email) }}" required>
+                                <input id="email" name="email" type="email" class="form-control" value="{{ old('email', $user->email) }}" required readonly>
                                 @error('email')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
@@ -51,14 +51,14 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="phone" class="form-label">{{ __('admin.phone') }}</label>
-                                <input id="phone" name="phone" type="tel" class="form-control" value="{{ old('phone', $user->phone) }}">
+                                <input id="phone" name="phone" type="tel" class="form-control" value="{{ old('phone', $user->phone) }}" readonly>
                                 @error('phone')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-6">
                                 <label for="address" class="form-label">{{ __('admin.address') }}</label>
-                                <input id="address" name="address" type="text" class="form-control" value="{{ old('address', $user->address) }}">
+                                <input id="address" name="address" type="text" class="form-control" value="{{ old('address', $user->address) }}" readonly>
                                 @error('address')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
@@ -67,7 +67,7 @@
 
                         <div class="mb-3">
                             <label for="neighborhood" class="form-label">{{ __('admin.neighborhood') }}</label>
-                            <input id="neighborhood" name="neighborhood" type="text" class="form-control" value="{{ old('neighborhood', $user->neighborhood) }}">
+                            <input id="neighborhood" name="neighborhood" type="text" class="form-control" value="{{ old('neighborhood', $user->neighborhood) }}" readonly>
                             @error('neighborhood')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
