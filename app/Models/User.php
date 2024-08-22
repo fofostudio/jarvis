@@ -31,6 +31,25 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(SessionLog::class);
     }
 
+    public function breakLogs()
+    {
+        return $this->hasMany(BreakLog::class);
+    }
+
+    public function operativeReports()
+    {
+        return $this->hasMany(OperativeReport::class);
+    }
+
+
+    /**
+     * Get the operative reports audited by the user.
+     */
+    public function auditedReports()
+    {
+        return $this->hasMany(OperativeReport::class, 'auditor_id');
+    }
+
     public function groups()
     {
         return $this->belongsToMany(Group::class, 'group_operator')->withPivot('shift')->withTimestamps();

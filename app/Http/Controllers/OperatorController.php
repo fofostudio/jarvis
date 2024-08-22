@@ -28,56 +28,33 @@ class OperatorController extends Controller
         $data['viewType'] = $viewType;
         $data['chartData'] = $this->prepareChartData($data['points'], $viewType);
 
+        // Asegúrate de que todas las variables necesarias estén definidas
+        $data['dailyGoal'] = $data['dailyGoal'] ?? 100; // Valor por defecto si no está definido
+        $data['recentPoints'] = $data['points']->take(10);
+
         return view('operator.my_points', $data);
     }
 
     private function getOperatorData($user)
     {
-        $now = Carbon::now();
-        $yesterday = Carbon::yesterday();
-        $lastWeekStart = $now->copy()->subWeek()->startOfWeek();
-        $lastWeekEnd = $now->copy()->subWeek()->endOfWeek();
-        $thisWeekStart = $now->copy()->startOfWeek();
-        $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
-        $lastMonthEnd = $now->copy()->subMonth()->endOfMonth();
-        $thisMonthStart = $now->copy()->startOfMonth();
-
         $points = $user->points()->orderBy('date', 'desc')->get();
 
-        $data = $this->calculatePointsData($points, $now, $yesterday, $thisWeekStart, $lastWeekStart, $lastWeekEnd, $thisMonthStart, $lastMonthStart, $lastMonthEnd);
-        $data['points'] = $points;
-
-        // Additional operator statistics
-        $bestDayData = $points->groupBy('date')->map(function ($group) {
-            return [
-                'date' => $group->first()->date,
-                'points' => $group->sum('points')
-            ];
-        })->sortByDesc('points')->first();
-
-        $data['bestDay'] = $bestDayData['points'];
-        $data['bestDayDate'] = $bestDayData['date'];
-
-        $bestMonthData = $points->groupBy(function($item) {
-            return Carbon::parse($item->date)->format('Y-m');
-        })->map(function ($group) {
-            $firstDate = Carbon::parse($group->first()->date);
-            return [
-                'month' => $firstDate->format('Y-m'),
-                'points' => $group->sum('points')
-            ];
-        })->sortByDesc('points')->first();
-        $data['bestMonth'] = $bestMonthData['points'];
-        $data['bestMonthDate'] = $bestMonthData['month'];
-        $data['averagePoints'] = $points->average('points');
-        $data['totalPointsEver'] = $points->sum('points');
-        $data['currentMonthPoints'] = $points->where('date', '>=', $thisMonthStart->toDateString())->sum('points');
-        $data['lastMonthPoints'] = $points->whereBetween('date', [$lastMonthStart->toDateString(), $lastMonthEnd->toDateString()])->sum('points');
-        $data['monthlyImprovement'] = $this->calculatePercentage($data['currentMonthPoints'], $data['lastMonthPoints']);
-        $data['currentWeekPoints'] = $points->where('date', '>=', $thisWeekStart->toDateString())->sum('points');
-        $data['lastWeekPoints'] = $points->whereBetween('date', [$lastWeekStart->toDateString(), $lastWeekEnd->toDateString()])->sum('points');
-        $data['weeklyImprovement'] = $this->calculatePercentage($data['currentWeekPoints'], $data['lastWeekPoints']);
-        return $data;
+        return [
+            'points' => $points,
+            'totalPoints' => $points->sum('points'),
+            'monthlyPoints' => $points->where('date', '>=', now()->startOfMonth())->sum('points'),
+            'weeklyPoints' => $points->where('date', '>=', now()->startOfWeek())->sum('points'),
+            'todayPoints' => $points->where('date', now()->toDateString())->sum('points'),
+            'monthlyPercentage' => $this->calculatePercentageChange($points, 'month'),
+            'weeklyPercentage' => $this->calculatePercentageChange($points, 'week'),
+            'dailyPercentage' => $this->calculatePercentageChange($points, 'day'),
+            'bestDay' => $points->max('points'),
+            'bestDayDate' => $points->where('points', $points->max('points'))->first()->date ?? null,
+            'bestMonth' => $this->getBestMonth($points),
+            'bestMonthDate' => $this->getBestMonthDate($points),
+            'averagePoints' => $points->average('points'),
+            'dailyGoal' => 100, // Ajusta este valor según sea necesario
+        ];
     }
 
     private function getGroupData($user)
@@ -122,7 +99,7 @@ class OperatorController extends Controller
         $data['bestDay'] = $bestDayData['points'];
         $data['bestDayDate'] = $bestDayData['date'];
 
-        $bestMonthData = $points->groupBy(function($item) {
+        $bestMonthData = $points->groupBy(function ($item) {
             return Carbon::parse($item->date)->format('Y-m');
         })->map(function ($group) {
             $firstDate = Carbon::parse($group->first()->date);
@@ -163,45 +140,71 @@ class OperatorController extends Controller
     private function getEmptyData()
     {
         return [
+            'points' => collect(),
             'totalPoints' => 0,
             'monthlyPoints' => 0,
-            'lastMonthPoints' => 0,
             'weeklyPoints' => 0,
-            'lastWeekPoints' => 0,
             'todayPoints' => 0,
-            'yesterdayPoints' => 0,
-            'recentPoints' => collect(),
-            'points' => collect(),
             'monthlyPercentage' => 0,
             'weeklyPercentage' => 0,
             'dailyPercentage' => 0,
+            'bestDay' => 0,
+            'bestDayDate' => null,
+            'bestMonth' => 0,
+            'bestMonthDate' => null,
+            'averagePoints' => 0,
+            'dailyGoal' => 100,
         ];
     }
 
-    private function calculatePercentage($current, $previous)
+
+    private function calculatePercentageChange($points, $period)
     {
-        if ($previous == 0) {
-            return $current > 0 ? 100 : 0;
-        }
-        return round((($current - $previous) / $previous) * 100, 2);
+        $now = now();
+        $currentPeriodStart = $now->copy()->startOf($period);
+        $lastPeriodStart = $now->copy()->subUnit($period, 1)->startOf($period);
+        $lastPeriodEnd = $lastPeriodStart->copy()->endOf($period);
+
+        $currentPeriodPoints = $points->where('date', '>=', $currentPeriodStart)->sum('points');
+        $lastPeriodPoints = $points->whereBetween('date', [$lastPeriodStart, $lastPeriodEnd])->sum('points');
+
+        return $lastPeriodPoints > 0
+            ? round((($currentPeriodPoints - $lastPeriodPoints) / $lastPeriodPoints) * 100, 2)
+            : 100;
     }
 
+    private function subUnit($period, $amount)
+    {
+        switch ($period) {
+            case 'day':
+                return $this->subDays($amount);
+            case 'week':
+                return $this->subWeeks($amount);
+            case 'month':
+                return $this->subMonths($amount);
+            default:
+                throw new \InvalidArgumentException("Invalid period: {$period}");
+        }
+    }
+    private function getBestMonth($points)
+    {
+        return $points->groupBy(function ($point) {
+            return Carbon::parse($point->date)->format('Y-m');
+        })->map->sum('points')->max();
+    }
+    private function getBestMonthDate($points)
+    {
+        return $points->groupBy(function ($point) {
+            return Carbon::parse($point->date)->format('Y-m');
+        })->map->sum('points')->sortDesc()->keys()->first();
+    }
     private function prepareChartData($points, $viewType)
     {
-        $chartData = $points->groupBy('date')
-            ->map(function ($group) {
-                return [
-                    'date' => $group->first()->date,
-                    'total' => $group->sum('points')
-                ];
-            })
-            ->sortBy('date');
-
         return [
-            'labels' => $chartData->pluck('date')->map(function($date) {
+            'labels' => $points->pluck('date')->map(function ($date) {
                 return Carbon::parse($date)->format('Y-m-d');
             }),
-            'data' => $chartData->pluck('total')
+            'data' => $points->pluck('points'),
         ];
     }
 }

@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{{ $viewType === 'operator' ? 'Mis Puntos' : 'Puntos del Grupo' }}</h1>
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ $viewType === 'operator' ? 'Mis Puntos' : 'Puntos del Grupo' }}</h1>
         <div class="dropdown">
-            <button class="btn btn-secondary dropdown-toggle" type="button" id="viewTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <button class="btn btn-primary dropdown-toggle shadow" type="button" id="viewTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                 {{ ucfirst($viewType) }}
             </button>
             <ul class="dropdown-menu" aria-labelledby="viewTypeDropdown">
@@ -16,45 +16,76 @@
     </div>
 
     <!-- Resumen de Puntos -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card">
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
-                    <h5 class="card-title">Total de Puntos</h5>
-                    <p class="card-text display-4">{{ $totalPoints }}</p>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total de Puntos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalPoints }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card">
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
                 <div class="card-body">
-                    <h5 class="card-title">Puntos este Mes</h5>
-                    <p class="card-text display-4">{{ $monthlyPoints }}</p>
-                    <p class="card-text {{ $monthlyPercentage >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ $monthlyPercentage }}% vs mes anterior
-                    </p>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Puntos este Mes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $monthlyPoints }}</div>
+                            <div class="text-xs {{ $monthlyPercentage >= 0 ? 'text-success' : 'text-danger' }}">
+                                {{ $monthlyPercentage }}% vs mes anterior
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card">
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
-                    <h5 class="card-title">Puntos esta Semana</h5>
-                    <p class="card-text display-4">{{ $weeklyPoints }}</p>
-                    <p class="card-text {{ $weeklyPercentage >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ $weeklyPercentage }}% vs semana anterior
-                    </p>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Puntos esta Semana</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $weeklyPoints }}</div>
+                            <div class="text-xs {{ $weeklyPercentage >= 0 ? 'text-success' : 'text-danger' }}">
+                                {{ $weeklyPercentage }}% vs semana anterior
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card">
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
-                    <h5 class="card-title">Puntos Hoy</h5>
-                    <p class="card-text display-4">{{ $todayPoints }}</p>
-                    <p class="card-text {{ $dailyPercentage >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ $dailyPercentage }}% vs ayer
-                    </p>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Puntos Hoy</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $todayPoints }}</div>
+                            <div class="text-xs {{ $dailyPercentage >= 0 ? 'text-success' : 'text-danger' }}">
+                                {{ $dailyPercentage }}% vs ayer
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-comments fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -62,64 +93,84 @@
 
     @if ($viewType === 'operator')
     <!-- Estadísticas adicionales solo para operador -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card">
+    <div class="row">
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Estadísticas del Operador</h6>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Mejor Día</h5>
-                    <p class="card-text display-4">{{ $bestDay }}</p>
-                    <p class="card-text">Fecha: {{ \Carbon\Carbon::parse($bestDayDate)->format('d/m/Y') }}</p>
+                    <div class="mb-3">
+                        <h4 class="small font-weight-bold">Mejor Día <span class="float-right">{{ $bestDay }} puntos</span></h4>
+                        <p class="text-muted small">Fecha: {{ \Carbon\Carbon::parse($bestDayDate)->format('d/m/Y') }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h4 class="small font-weight-bold">Mejor Mes <span class="float-right">{{ $bestMonth }} puntos</span></h4>
+                        <p class="text-muted small">Mes: {{ \Carbon\Carbon::parse($bestMonthDate)->format('M Y') }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h4 class="small font-weight-bold">Promedio de Puntos <span class="float-right">{{ round($averagePoints, 2) }}</span></h4>
+                    </div>
+                    <div class="mb-3">
+                        <h4 class="small font-weight-bold">
+                            Eficiencia
+                            <span class="float-right">
+                                @if(isset($dailyGoal) && $dailyGoal > 0)
+                                    {{ round(($todayPoints / $dailyGoal) * 100, 2) }}%
+                                @else
+                                    N/A
+                                @endif
+                            </span>
+                        </h4>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: {{ isset($dailyGoal) && $dailyGoal > 0 ? min(($todayPoints / $dailyGoal) * 100, 100) : 0 }}%"
+                                 aria-valuenow="{{ isset($dailyGoal) && $dailyGoal > 0 ? min(($todayPoints / $dailyGoal) * 100, 100) : 0 }}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Mejor Mes</h5>
-                    <p class="card-text display-4">{{ $bestMonth }}</p>
-                    <p class="card-text">Mes: {{ \Carbon\Carbon::parse($bestMonthDate)->format('M Y') }}</p>
+
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Tendencia de Puntos</h6>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Promedio de Puntos</h5>
-                    <p class="card-text display-4">{{ round($averagePoints, 2) }}</p>
+                    <div class="chart-area">
+                        <canvas id="pointsTrendChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     @endif
 
-    <!-- Gráfico de Tendencia -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Tendencia de Puntos</h5>
-            <canvas id="pointsTrendChart"></canvas>
-        </div>
-    </div>
-
     @if ($viewType === 'operator')
     <!-- Lista de Últimos Registros solo para operador -->
-    <div class="card">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Últimos Registros de Puntos</h6>
+        </div>
         <div class="card-body">
-            <h5 class="card-title">Últimos Registros de Puntos</h5>
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                     <thead>
-                        <tr> <th>Grupo</th>
+                        <tr>
+                            <th>Grupo</th>
                             <th>Fecha</th>
                             <th>Puntos</th>
                             <th>Jornada</th>
-
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($recentPoints as $point)
                             <tr>
-                                                                <td>{{ $point->group->name ?? 'N/A' }}</td>
-
+                                <td>{{ $point->group->name ?? 'N/A' }}</td>
                                 <td>{{ $point->date }}</td>
                                 <td>{{ $point->points }}</td>
                                 <td>{{ $point->shift }}</td>

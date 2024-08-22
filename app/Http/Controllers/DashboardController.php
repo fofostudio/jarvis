@@ -13,6 +13,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -84,6 +85,22 @@ class DashboardController extends Controller
         $totalPoints = Point::where('shift', $selectedShift)->sum('points');
         $totalGoal = Point::where('shift', $selectedShift)->sum('goal');
 
+        $girlsPerPlatform = Platform::withCount('girls')->get();
+
+        $currentMonthData = Point::selectRaw('DATE(date) as date, SUM(points) as total_points, SUM(goal) as total_goal')
+            ->whereMonth('date', Carbon::now()->month)
+            ->whereYear('date', Carbon::now()->year)
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $previousMonthData = Point::selectRaw('DATE(date) as date, SUM(points) as total_points, SUM(goal) as total_goal')
+            ->whereMonth('date', Carbon::now()->subMonth()->month)
+            ->whereYear('date', Carbon::now()->subMonth()->year)
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
         return view('dashboard.superadmin', compact(
             'activeOperators',
             'totalGroups',
@@ -100,25 +117,44 @@ class DashboardController extends Controller
             'thisWeekPoints',
             'lastWeekPoints',
             'totalPoints',
-            'totalGoal'  // Added this line
+            'totalGoal',
+            'girlsPerPlatform',
+            'currentMonthData',
+            'previousMonthData'
         ));
     }
     public function getMonthlyTotals(Request $request)
     {
-        $period = $request->input('period', 'current');
+        try {
+            $period = $request->query('period', 'current');
 
-        $currentDate = Carbon::now();
-        if ($period === 'previous') {
-            $currentDate = $currentDate->subMonth();
+            if ($period === 'current') {
+                $startDate = now()->startOfMonth();
+                $endDate = now()->endOfMonth();
+            } else {
+                $startDate = now()->subMonth()->startOfMonth();
+                $endDate = now()->subMonth()->endOfMonth();
+            }
+
+            $monthlyData = Point::selectRaw('DATE(date) as date, SUM(points) as total_points, SUM(goal) as total_goal')
+                ->whereBetween('date', [$startDate, $endDate])
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+
+            $formattedData = $monthlyData->map(function ($item) {
+                return [
+                    'month' => $item->date,
+                    'total_points' => $item->total_points,
+                    'total_goal' => $item->total_goal
+                ];
+            });
+
+            return response()->json($formattedData);
+        } catch (\Exception $e) {
+            Log::error('Error in getMonthlyTotals: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while fetching monthly totals'], 500);
         }
-
-        $monthlyTotals = Point::selectRaw('DATE_FORMAT(date, "%M") as month, SUM(points) as total_points, SUM(goal) as total_goal')
-            ->whereYear('date', $currentDate->year)
-            ->whereMonth('date', $currentDate->month)
-            ->groupBy('month')
-            ->get();
-
-        return $monthlyTotals;
     }
 
     private function operatorDashboard($user)
@@ -147,14 +183,15 @@ class DashboardController extends Controller
             ];
         })->values();
 
-        // Obtener los últimos inicios de sesión
         $lastLogins = SessionLog::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
 
-        // Obtener el estado de descanso actual del operador
         $isOnBreak = $user->is_on_break ?? false;
+
+        // Obtener la jornada asignada
+        $assignedShift = $currentShift ? ucfirst($currentShift) : 'No asignado';
 
         return view('dashboard.operator', compact(
             'assignedGroup',
@@ -164,10 +201,10 @@ class DashboardController extends Controller
             'chartData',
             'currentShift',
             'lastLogins',
-            'isOnBreak'
+            'isOnBreak',
+            'assignedShift'
         ));
     }
-
     private function getCurrentShift()
     {
         // Asumimos que el usuario actual es el operador

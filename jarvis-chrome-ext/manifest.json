@@ -10,7 +10,7 @@
     "host_permissions": [
       "http://*/*",
       "https://*/*",
-      "https://jarvisl.fly.dev/"
+      "http://54.184.25.165/"
     ],
     "action": {
       "default_popup": "popup.html",

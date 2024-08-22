@@ -7,26 +7,68 @@
     </h2>
 
     <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">{{ __('admin.avatar') }}</div>
+                <div class="card-body text-center">
+                    @if ($user->avatar)
+                        <img src="{{ asset('avatars/' . $user->avatar) }}" alt="Avatar" class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
+                    @else
+                        <img src="{{ asset('default-avatar.png') }}" alt="Default Avatar" class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
+                    @endif
+                    <input id="avatar" name="avatar" type="file" class="form-control">
+                    @error('avatar')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+        </div>
         <div class="col-md-8">
             <div class="card mb-4">
                 <div class="card-header">{{ __('admin.profile_info') }}</div>
                 <div class="card-body">
-                    <form method="post" action="{{ route('profile.update') }}">
+                    <form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data">
                         @csrf
                         @method('patch')
 
-                        <div class="mb-3">
-                            <label for="name" class="form-label">{{ __('admin.profile_name') }}</label>
-                            <input id="name" name="name" type="text" class="form-control" value="{{ old('name', $user->name) }}" required autofocus>
-                            @error('name')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">{{ __('admin.profile_name') }}</label>
+                                <input id="name" name="name" type="text" class="form-control" value="{{ old('name', $user->name) }}" required autofocus>
+                                @error('name')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">{{ __('admin.email') }}</label>
+                                <input id="email" name="email" type="email" class="form-control" value="{{ old('email', $user->email) }}" required>
+                                @error('email')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">{{ __('admin.phone') }}</label>
+                                <input id="phone" name="phone" type="tel" class="form-control" value="{{ old('phone', $user->phone) }}">
+                                @error('phone')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label for="address" class="form-label">{{ __('admin.address') }}</label>
+                                <input id="address" name="address" type="text" class="form-control" value="{{ old('address', $user->address) }}">
+                                @error('address')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="email" class="form-label">{{ __('admin.email') }}</label>
-                            <input id="email" name="email" type="email" class="form-control" value="{{ old('email', $user->email) }}" required>
-                            @error('email')
+                            <label for="neighborhood" class="form-label">{{ __('admin.neighborhood') }}</label>
+                            <input id="neighborhood" name="neighborhood" type="text" class="form-control" value="{{ old('neighborhood', $user->neighborhood) }}">
+                            @error('neighborhood')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
@@ -70,7 +112,6 @@
             </div>
 
             <!-- You can add the delete account section here if needed -->
-
         </div>
     </div>
 </div>

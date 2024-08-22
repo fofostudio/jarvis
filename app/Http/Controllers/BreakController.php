@@ -18,7 +18,11 @@ class BreakController extends Controller
             ->whereDate('start_time', Carbon::today())
             ->first();
 
-        if ($existingBreak) {
+        if ($existingBreak && $existingBreak->actual_end_time === null) {
+            return response()->json(['error' => 'You are already on a break.'], 400);
+        }
+
+        if ($existingBreak && $existingBreak->actual_end_time !== null) {
             return response()->json(['error' => 'You have already taken your break today.'], 400);
         }
 
@@ -31,7 +35,35 @@ class BreakController extends Controller
         $user->is_on_break = true;
         $user->save();
 
-        return response()->json(['message' => 'Break started successfully.']);
+        return response()->json(['message' => 'Break started successfully.', 'start_time' => $breakLog->start_time->toIso8601String()]);
+    }
+
+    public function endBreak(Request $request)
+    {
+        $user = Auth::user();
+        $breakLog = BreakLog::where('user_id', $user->id)
+            ->whereDate('start_time', Carbon::today())
+            ->whereNull('actual_end_time')
+            ->first();
+
+        if (!$breakLog) {
+            return response()->json(['error' => 'No active break found.'], 400);
+        }
+
+        $now = Carbon::now();
+        $breakLog->actual_end_time = $now;
+
+        $overtime = $now->diffInSeconds($breakLog->expected_end_time, false);
+        if ($overtime > 5) {
+            $breakLog->overtime = $overtime;
+        }
+
+        $breakLog->save();
+
+        $user->is_on_break = false;
+        $user->save();
+
+        return response()->json(['message' => 'Break ended successfully.', 'overtime' => $breakLog->overtime]);
     }
 
     public function getBreakStatus()
@@ -41,38 +73,21 @@ class BreakController extends Controller
             ->whereDate('start_time', Carbon::today())
             ->first();
 
-        if (!$breakLog) {
+        if (!$breakLog || $breakLog->actual_end_time !== null) {
             return response()->json([
                 'is_on_break' => false,
                 'remaining_time' => 1800,
-                'break_taken' => false
+                'break_taken' => $breakLog !== null,
+                'start_time' => null
             ]);
         }
 
         $now = Carbon::now();
         $remainingTime = $now->diffInSeconds($breakLog->expected_end_time, false);
 
-        if ($remainingTime <= 0) {
-            $user->is_on_break = false;
-            $user->save();
-
-            if (!$breakLog->actual_end_time) {
-                $breakLog->actual_end_time = $breakLog->expected_end_time;
-                $breakLog->overtime = $now->diffInSeconds($breakLog->expected_end_time);
-                $breakLog->save();
-            }
-
-            return response()->json([
-                'is_on_break' => false,
-                'remaining_time' => 0,
-                'break_taken' => true,
-                'overtime' => $breakLog->overtime
-            ]);
-        }
-
         return response()->json([
             'is_on_break' => true,
-            'remaining_time' => $remainingTime,
+            'remaining_time' => max($remainingTime, -5),
             'break_taken' => true,
             'start_time' => $breakLog->start_time->toIso8601String()
         ]);

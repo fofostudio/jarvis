@@ -18,6 +18,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WorkPlanController;
 
+
 Route::redirect('/', '/login');
 
 require __DIR__ . '/auth.php';
@@ -35,11 +36,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/automated-task/platform/{platform}', [AutomatedTaskController::class, 'platformTasks'])->name('automated_task.platform');
     Route::get('/my-points', [OperatorController::class, 'myPoints'])->name('my_points');
     Route::get('/my-logins', [SessionLogController::class, 'myLogins'])->name('my_logins');
-    Route::get('/my-operative-reports', [OperativeReportController::class, 'myReports'])->name('my_operative_reports');
     Route::post('/update-break', [BreakController::class, 'updateBreak']);
     Route::post('/start-break', [BreakController::class, 'startBreak']);
+    Route::post('/end-break', [BreakController::class, 'endBreak']);
     Route::get('/break-status', [BreakController::class, 'getBreakStatus']);
     Route::get('/group-points', [OperatorController::class, 'groupPoints']);
+    Route::get('/my-config', [OperatorController::class, 'mySetings'])->name('my-settings');
+    Route::get('/my-operative-reports', [OperativeReportController::class, 'myReports'])->name('my-operative-reports');
+    Route::resource('operative-reports', OperativeReportController::class);
+    Route::post('/operative-reports/{operativeReport}/review', [OperativeReportController::class, 'reviewReport'])->name('operative-reports.review');
+    Route::get('/operative-reports/{operativeReport}/download', [OperativeReportController::class, 'downloadFile'])->name('operative-reports.download');
     Route::get('/my-work-plan', [WorkPlanController::class, 'myPlan'])->name('my_work_plan');
     Route::get('/automated-task/platform/{platform}', [AutomatedTaskController::class, 'showPlatformTasks'])
         ->name('automated_task.platform');
@@ -52,7 +58,7 @@ Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('group_operator', GroupOperatorController::class);
     Route::resource('points', PointController::class);
-    Route::get('/dashboard/monthly-totals', 'DashboardController@getMonthlyTotals');
+    Route::get('/dashboard/monthly-totals', [DashboardController::class, 'getMonthlyTotals'])->name('dashboard.monthly-totals');
     Route::get('/admin/session-logs', [SessionLogController::class, 'index'])->name('admin.session_logs.index');
     Route::post('/points/groups', [PointController::class, 'groups'])->name('points.groups');
     Route::post('/points/preview', [PointController::class, 'preview'])->name('points.preview');

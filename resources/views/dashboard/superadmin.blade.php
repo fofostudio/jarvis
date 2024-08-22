@@ -13,8 +13,11 @@
                 ->whereDate('start_time', \Carbon\Carbon::today())
                 ->where('overtime', '>', 0)
                 ->get();
-        @endphp
 
+            // Fetch data for girls per platform
+            $girlsPerPlatform = \App\Models\Platform::withCount('girls')->get();
+        @endphp
+        <!-- Break Time Carousel -->
         <div class="row">
             <div class="col-12">
                 <div class="card shadow mb-4">
@@ -40,8 +43,10 @@
                                                                 @if ($break->overtime)
                                                                     Excede: {{ gmdate('H:i:s', $break->overtime) }}
                                                                 @else
-                                                                    Tiempo Restante
-                                                                    {{ $break->expected_end_time->diffForHumans(null, true) }}
+                                                                    <span class="break-countdown"
+                                                                        data-end-time="{{ $break->expected_end_time->timestamp }}">
+                                                                        Tiempo Restante: Calculando...
+                                                                    </span>
                                                                 @endif
                                                             </p>
                                                         </div>
@@ -82,6 +87,7 @@
                     </div>
                 </div>
             </div>
+
 
             <!-- This Month's Points Card -->
             <div class="col-xl-4 col-md-6 mb-4">
@@ -215,7 +221,7 @@
         </div>
         <div class="row">
             <!-- Daily Group Chart -->
-            <div class="col-xl-6 col-lg-6">
+            <div class="col-xl-4 col-lg-4">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.daily_group_points') }}</h6>
@@ -228,8 +234,10 @@
                 </div>
             </div>
 
+
+
             <!-- Weekly Total Points Chart -->
-            <div class="col-xl-6 col-lg-6">
+            <div class="col-xl-4 col-lg-4">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.weekly_total_points') }}</h6>
@@ -241,6 +249,22 @@
                     </div>
                 </div>
             </div>
+            <!-- New Girls per Platform Pie Chart -->
+
+            <div class="col-xl-4 col-lg-4">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.girls_per_platform') }}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-pie">
+                            <canvas id="girlsPerPlatformChart"
+                                data-chart-data="{{ json_encode($girlsPerPlatform) }}"></canvas>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Monthly Total Points vs Goals Chart -->
 
         </div>
@@ -248,10 +272,9 @@
             <div class="col-12">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.monthly_total_points_vs_goals') }}
-                        </h6>
+                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.monthly_total_points_vs_goals') }}</h6>
                         <div class="dropdown no-arrow">
-                            <select id="monthSelector" class="form-select" onchange="updateMonthlyChart(this.value)">
+                            <select id="monthSelector" class="form-select">
                                 <option value="current">{{ __('admin.this_month') }}</option>
                                 <option value="previous">{{ __('admin.last_month') }}</option>
                             </select>
@@ -265,12 +288,21 @@
                 </div>
             </div>
         </div>
+
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+
 
     <script>
+        // dashboard.js
+
         document.addEventListener('DOMContentLoaded', function() {
             initAdminDashboard();
+            initGirlsPerPlatformChart();
+            initBreakCountdown();
+            initMonthlyTotalChart();
         });
 
         function initAdminDashboard() {
@@ -338,58 +370,6 @@
                 });
             }
 
-            function initMonthlyTotalChart() {
-                var monthlyTotalCtx = document.getElementById('monthlyTotalChart');
-                if (monthlyTotalCtx) {
-                    updateMonthlyChart('current');
-                }
-            }
-
-            function updateMonthlyChart(period) {
-                var monthlyTotalCtx = document.getElementById('monthlyTotalChart');
-                var monthSelector = document.getElementById('monthSelector');
-
-                axios.get('/dashboard/monthly-totals?period=' + period)
-                    .then(function(response) {
-                        var monthlyTotalData = response.data;
-                        new Chart(monthlyTotalCtx.getContext('2d'), {
-                            type: 'bar',
-                            data: {
-                                labels: monthlyTotalData.map(item => item.month),
-                                datasets: [{
-                                        label: 'Total Points',
-                                        data: monthlyTotalData.map(item => item.total_points),
-                                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                                    },
-                                    {
-                                        label: 'Total Goals',
-                                        data: monthlyTotalData.map(item => item.total_goal),
-                                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                                    }
-                                ]
-                            },
-                            options: {
-                                responsive: true,
-                                scales: {
-                                    y: {
-                                        beginAtZero: true
-                                    }
-                                }
-                            }
-                        });
-
-                        // Update the month selector value
-                        if (period === 'current') {
-                            monthSelector.value = 'current';
-                        } else {
-                            monthSelector.value = 'previous';
-                        }
-                    })
-                    .catch(function(error) {
-                        console.error('Error fetching monthly totals:', error);
-                    });
-            }
-
             // Shift selector
             var shiftSelector = document.getElementById('shiftSelector');
             if (shiftSelector) {
@@ -397,6 +377,121 @@
                     window.location.href = '/dashboard?shift=' + this.value;
                 });
             }
+        }
+
+        function initGirlsPerPlatformChart() {
+            var ctx = document.getElementById('girlsPerPlatformChart').getContext('2d');
+            var girlsPerPlatformData = JSON.parse(ctx.canvas.dataset.chartData);
+
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: girlsPerPlatformData.map(item => item.name),
+                    datasets: [{
+                        data: girlsPerPlatformData.map(item => item.girls_count),
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 206, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(153, 102, 255, 0.8)',
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Girls per Platform'
+                        }
+                    }
+                }
+            });
+        }
+
+        function initBreakCountdown() {
+            const countdownElements = document.querySelectorAll('.break-countdown');
+
+            countdownElements.forEach(element => {
+                const endTime = parseInt(element.dataset.endTime);
+
+                function updateCountdown() {
+                    const now = Math.floor(Date.now() / 1000);
+                    const timeLeft = endTime - now;
+
+                    if (timeLeft > 0) {
+                        const minutes = Math.floor(timeLeft / 60);
+                        const seconds = timeLeft % 60;
+                        element.textContent =
+                            `Tiempo Restante: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    } else {
+                        element.textContent = 'Break finalizado';
+                        // Opcionalmente, podrías querer actualizar el estilo o la clase del elemento aquí
+                        element.classList.add('break-finished');
+                    }
+                }
+
+                // Actualiza inmediatamente y luego cada segundo
+                updateCountdown();
+                const intervalId = setInterval(updateCountdown, 1000);
+
+                // Limpia el intervalo cuando el componente se desmonte (opcional, dependiendo de tu setup)
+                element.dataset.intervalId = intervalId;
+            });
+        }
+
+        function clearBreakCountdowns() {
+            const countdownElements = document.querySelectorAll('.break-countdown');
+            countdownElements.forEach(element => {
+                clearInterval(parseInt(element.dataset.intervalId));
+            });
+        }
+
+
+        function initMonthlyTotalChart() {
+            var ctx = document.getElementById('monthlyTotalChart').getContext('2d');
+            var currentMonthData = @json($currentMonthData);
+            var previousMonthData = @json($previousMonthData);
+
+            var chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: currentMonthData.map(item => item.date),
+                    datasets: [{
+                            label: 'Total Points',
+                            data: currentMonthData.map(item => item.total_points),
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            fill: true,
+                        },
+                        {
+                            label: 'Total Goals',
+                            data: currentMonthData.map(item => item.total_goal),
+                            backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                            fill: true,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('monthSelector').addEventListener('change', function() {
+                var selectedData = this.value === 'current' ? currentMonthData : previousMonthData;
+                chart.data.labels = selectedData.map(item => item.date);
+                chart.data.datasets[0].data = selectedData.map(item => item.total_points);
+                chart.data.datasets[1].data = selectedData.map(item => item.total_goal);
+                chart.update();
+            });
         }
     </script>
 @endsection

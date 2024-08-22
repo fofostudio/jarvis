@@ -119,7 +119,7 @@
     </li>
 
     <li class="nav-item">
-        <a href="{{ route('my_operative_reports') }}" class="nav-link text-truncate @if (request()->routeIs('my_operative_reports')) active @endif">
+        <a href="{{ route('my-operative-reports') }}" class="nav-link text-truncate @if (request()->routeIs('my_operative_reports')) active @endif">
             <i class="bi-file-text me-2"></i> {{ __('operator.my_operative_reports') }}
         </a>
     </li>
@@ -131,7 +131,7 @@
     </li>
 
     <li class="nav-item">
-        <a href="{{ route('my_work_plan') }}" class="nav-link text-truncate @if (request()->routeIs('settings')) active @endif">
+        <a href="{{ route('profile.edit') }}" class="nav-link text-truncate @if (request()->routeIs('profile.edit')) active @endif">
             <i class="bi-gear me-2"></i> {{ __('operator.settings') }}
         </a>
     </li>

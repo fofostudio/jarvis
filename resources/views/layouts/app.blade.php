@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="es">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" href="#" />
     @yield('javascriptheader')
@@ -27,9 +27,7 @@
             font-family: 'Figtree', sans-serif;
         }
 
-        * {
-            font-family: 'Figtree', sans-serif !important;
-        }
+
     </style>
 
     @yield('css')

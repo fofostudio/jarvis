@@ -1,22 +1,31 @@
-# Software License Agreement
+Software License Agreement for CKEditor 4 LTS (4.23.0 and above)
+================================================================
 
-CKEditor - The text editor for Internet - http://ckeditor.com
-Copyright (c) 2003-2016, CKSource - Frederico Knabben. All rights reserved.
+CKEditor - The text editor for Internet - https://ckeditor.com/ <br>
+Copyright (c) 2003-2024, CKSource Holding sp. z o.o. All rights reserved.
+
+CKEditor 4 LTS ("Long Term Support") is available under exclusive terms of the [Extended Support Model](https://ckeditor.com/ckeditor-4-support/). [Contact us](https://ckeditor.com/contact/) to obtain a commercial license.
+
+Software License Agreement for CKEditor 4.22.* and below
+========================================================
+
+CKEditor - The text editor for Internet - https://ckeditor.com/ <br>
+Copyright (c) 2003-2024, CKSource Holding sp. z o.o. All rights reserved.
 
 Licensed under the terms of any of the following licenses at your
 choice:
 
--   GNU General Public License Version 2 or later (the "GPL")
-    http://www.gnu.org/licenses/gpl.html
-    (See Appendix A)
+ - GNU General Public License Version 2 or later (the "GPL")
+   https://www.gnu.org/licenses/gpl.html
+   (See Appendix A)
 
--   GNU Lesser General Public License Version 2.1 or later (the "LGPL")
-    http://www.gnu.org/licenses/lgpl.html
-    (See Appendix B)
+ - GNU Lesser General Public License Version 2.1 or later (the "LGPL")
+   https://www.gnu.org/licenses/lgpl.html
+   (See Appendix B)
 
--   Mozilla Public License Version 1.1 or later (the "MPL")
-    http://www.mozilla.org/MPL/MPL-1.1.html
-    (See Appendix C)
+ - Mozilla Public License Version 1.1 or later (the "MPL")
+   https://www.mozilla.org/MPL/MPL-1.1.html
+   (See Appendix C)
 
 You are not required to, but if you want to explicitly declare the
 license you have chosen to be bound to when using, reproducing,
@@ -26,7 +35,8 @@ license choice. In any case, your choice will not restrict any
 recipient of your version of this software to use, reproduce, modify
 and distribute this software under any of the above licenses.
 
-## Sources of Intellectual Property Included in CKEditor
+Sources of Intellectual Property Included in CKEditor
+-----------------------------------------------------
 
 Where not otherwise indicated, all CKEditor content is authored by
 CKSource engineers and consists of CKSource-owned intellectual
@@ -35,32 +45,36 @@ done by developers outside of CKSource with their express permission.
 
 The following libraries are included in CKEditor under the MIT license (see Appendix D):
 
--   CKSource Samples Framework (included in the samples) - Copyright (c) 2014-2016, CKSource - Frederico Knabben.
--   PicoModal (included in `samples/js/sf.js`) - Copyright (c) 2012 James Frasca.
--   CodeMirror (included in the samples) - Copyright (C) 2014 by Marijn Haverbeke <marijnh@gmail.com> and others.
+* CKSource Samples Framework (included in the samples) - Copyright (c) 2014-2024, CKSource Holding sp. z o.o.
+* PicoModal (included in `samples/js/sf.js`) - Copyright (c) 2012 James Frasca.
+* CodeMirror (included in the samples) - Copyright (C) 2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others.
+* ES6Promise - Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors.
+* A polyfill for `CSS.escape` (adopted with modifications in `core/tools.js`), Mathias Bynens, v1.5.1, https://mths.be/cssescape.
 
 Parts of code taken from the following libraries are included in CKEditor under the MIT license (see Appendix D):
 
--   jQuery (inspired the domReady function, ckeditor_base.js) - Copyright (c) 2011 John Resig, http://jquery.com/
+* jQuery (inspired the domReady function, ckeditor_base.js) - Copyright (c) 2011 John Resig, https://jquery.com/
 
 The following libraries are included in CKEditor under the SIL Open Font License, Version 1.1 (see Appendix E):
 
--   Font Awesome (included in the toolbar configurator) - Copyright (C) 2012 by Dave Gandy.
+* Font Awesome (included in the toolbar configurator) - Copyright (C) 2012 by Dave Gandy.
 
 The following libraries are included in CKEditor under the BSD-3 License (see Appendix F):
 
--   highlight.js (included in the `codesnippet` plugin) - Copyright (c) 2006, Ivan Sagalaev.
--   YUI Library (included in the `uicolor` plugin) - Copyright (c) 2009, Yahoo! Inc.
+* highlight.js (included in the `codesnippet` plugin) - Copyright (c) 2006, Ivan Sagalaev.
 
-## Trademarks
 
-CKEditor is a trademark of CKSource - Frederico Knabben. All other brand
+Trademarks
+----------
+
+CKEditor is a trademark of CKSource Holding sp. z o.o. All other brand
 and product names are trademarks, registered trademarks or service
 marks of their respective holders.
 
 ---
 
-## Appendix A: The GPL License
+Appendix A: The GPL License
+---------------------------
 
 ```
 GNU GENERAL PUBLIC LICENSE
@@ -345,7 +359,8 @@ POSSIBILITY OF SUCH DAMAGES.
 END OF TERMS AND CONDITIONS
 ```
 
-## Appendix B: The LGPL License
+Appendix B: The LGPL License
+----------------------------
 
 ```
 GNU LESSER GENERAL PUBLIC LICENSE
@@ -808,7 +823,8 @@ DAMAGES.
 END OF TERMS AND CONDITIONS
 ```
 
-## Appendix C: The MPL License
+Appendix C: The MPL License
+---------------------------
 
 ```
 MOZILLA PUBLIC LICENSE
@@ -1280,7 +1296,8 @@ EXHIBIT A -Mozilla Public License.
      Original Code Source Code for Your Modifications.]
 ```
 
-## Appendix D: The MIT License
+Appendix D: The MIT License
+---------------------------
 
 ```
 The MIT License (MIT)
@@ -1304,7 +1321,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## Appendix E: The SIL Open Font License Version 1.1
+Appendix E: The SIL Open Font License Version 1.1
+---------------------------------------------
 
 ```
 SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
@@ -1394,7 +1412,8 @@ FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 ```
 
-## Appendix F: The BSD-3 License
+Appendix F: The BSD-3 License
+-----------------------------
 
 ```
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -1407,3 +1426,18 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
+
+
+Appendix H: The BSD-2 License
+-----------------------------
+
+```
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+(Ignore this line: %REMOVE_START%)

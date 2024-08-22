@@ -32,11 +32,11 @@ class SessionLogController extends Controller
 
         return view('admin.session_logs.index', compact('sessionLogs', 'users'));
     }
-
     public function myLogins(Request $request)
     {
         $user = Auth::user();
         $sessionLogs = $user->sessionLogs()->orderBy('date', 'desc')->get();
+        $breakLogs = $user->breakLogs()->orderBy('start_time', 'desc')->get();
 
         $data = [
             'labels' => [],
@@ -59,14 +59,10 @@ class SessionLogController extends Controller
             $date = $log->date->format('Y-m-d');
             $data['labels'][] = $date;
 
-            // Determine shift times
-            $shiftStartTime = $this->getShiftStartTime($log->shift);
-            $shiftEndTime = $this->getShiftEndTime($log->shift);
-
             // Check attendance
-            if ($log->login_time) {
-                $loginTime = Carbon::parse($log->login_time);
-                if ($loginTime <= $shiftStartTime) {
+            if ($log->first_login) {
+                $loginTime = Carbon::parse($log->first_login);
+                if ($loginTime <= $this->getShiftStartTime($log->shift)) {
                     $data['attendanceData'][] = 1;
                     $indicators['onTimeCount']++;
                 } else {
@@ -78,14 +74,9 @@ class SessionLogController extends Controller
                 $indicators['absentCount']++;
             }
 
-            // Calculate break time
-            $breakTime = $log->break_duration ?? 0;
-            $data['breakData'][] = $breakTime / 60; // Convert to hours
-            $indicators['totalBreakTime'] += $breakTime;
-
             // Calculate work hours
-            if ($log->login_time && $log->logout_time) {
-                $workHours = Carbon::parse($log->logout_time)->diffInHours(Carbon::parse($log->login_time));
+            if ($log->first_login && $log->last_logout) {
+                $workHours = Carbon::parse($log->last_logout)->diffInHours(Carbon::parse($log->first_login));
                 $data['workHoursData'][] = $workHours;
                 $totalWorkHours += $workHours;
             } else {
@@ -93,10 +84,18 @@ class SessionLogController extends Controller
             }
         }
 
+        foreach ($breakLogs as $log) {
+            $date = $log->start_time->format('Y-m-d');
+
+            // Calculate break time
+            $breakTime = $log->overtime > 0 ? $log->overtime : 0;
+            $indicators['totalBreakTime'] += $breakTime;
+        }
+
         $sessionsCount = count($sessionLogs);
         $indicators['averageWorkHours'] = $sessionsCount > 0 ? $totalWorkHours / $sessionsCount : 0;
 
-        return view('admin.session_logs.my_logins', compact('sessionLogs', 'data', 'indicators'));
+        return view('admin.session_logs.my_logins', compact('sessionLogs', 'breakLogs', 'data', 'indicators'));
     }
 
     private function getShiftStartTime($shift)

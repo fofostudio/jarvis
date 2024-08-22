@@ -1,4 +1,4 @@
-const API_BASE_URL = ' https://jarvisl.fly.dev/api';
+const API_BASE_URL = ' http://54.184.25.165/api';
 
 class API {
     static async request(endpoint, method = 'GET', body = null) {

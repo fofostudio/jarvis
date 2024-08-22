@@ -3,6 +3,59 @@
 @section('content')
 <div class="container">
     <h1>Mis Inicios de Sesión</h1>
+    <h4>Detalles de Inicios de Sesión</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Hora de Inicio</th>
+                <th>Hora de Salida</th>
+                <th>Conteo de Logins</th>
+                <th>Horas Trabajadas</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($sessionLogs as $log)
+                <tr>
+                    <td>{{ $log->date->format('d-m-Y') }}</td>
+                    <td>{{ $log->first_login ? $log->first_login->format('H:i:s') : '-' }}</td>
+                    <td>{{ $log->last_logout ? $log->last_logout->format('H:i:s') : '-' }}</td>
+                    <td>{{ $log->login_count }}</td>
+                    <td>
+                        @if($log->first_login && $log->last_logout)
+                            {{ $log->last_logout->diffInHours($log->first_login) }} horas
+                        @else
+                            -
+                        @endif
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    <h4>Detalles de Breaks</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Inicio</th>
+                <th>Fin Esperado</th>
+                <th>Fin Real</th>
+                <th>Tiempo Extra</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($breakLogs as $log)
+                <tr>
+                    <td>{{ $log->start_time->format('d-m-Y') }}</td>
+                    <td>{{ $log->start_time->format('H:i:s') }}</td>
+                    <td>{{ $log->expected_end_time->format('H:i:s') }}</td>
+                    <td>{{ $log->actual_end_time ? $log->actual_end_time->format('H:i:s') : '-' }}</td>
+                    <td>{{ $log->overtime > 0 ? $log->overtime . ' minutos' : '-' }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
 
     <div class="row">
         <div class="col-md-6">
@@ -29,37 +82,7 @@
         </div>
     </div>
 
-    <h4>Detalles de Inicios de Sesión</h4>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Fecha</th>
-                <th>Turno</th>
-                <th>Hora de Inicio</th>
-                <th>Hora de Salida</th>
-                <th>Tiempo de Break</th>
-                <th>Horas Trabajadas</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($sessionLogs as $log)
-                <tr>
-                    <td>{{ $log->date->format('Y-m-d') }}</td>
-                    <td>{{ ucfirst($log->shift) }}</td>
-                    <td>{{ $log->first_login ? $log->first_login->format('H:i:s') : '-' }}</td>
-                    <td>{{ $log->last_logout ? $log->last_logout->format('H:i:s') : '-' }}</td>
-                    <td>{{ $log->break_duration ? number_format($log->break_duration / 60, 2) . ' horas' : '-' }}</td>
-                    <td>
-                        @if($log->first_login && $log->first_login)
-                            {{ $log->first_login->diffInHours($log->first_login) }} horas
-                        @else
-                            -
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
