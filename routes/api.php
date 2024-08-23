@@ -9,6 +9,7 @@ use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\TaskResultController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Carbon\Carbon;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +21,19 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+Route::get('/get-week-range', function (Request $request) {
+    $week = $request->input('week');
+    $year = $request->input('year');
+
+    $startDate = Carbon::now()->setISODate($year, $week)->startOfWeek();
+    $endDate = $startDate->copy()->endOfWeek();
+
+    return response()->json([
+        'start_date' => $startDate->format('d/m/Y'),
+        'end_date' => $endDate->format('d/m/Y'),
+    ]);
+});
 Route::group([
     'middleware' => 'api',
     'prefix' => 'auth'

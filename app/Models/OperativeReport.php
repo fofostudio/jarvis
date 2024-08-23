@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Image;
 
 class OperativeReport extends Model
 {
@@ -91,6 +92,10 @@ class OperativeReport extends Model
             return 'Pendiente';
         }
         return $this->is_approved ? 'Aprobado' : 'Rechazado';
+    }
+    public function images()
+    {
+        return $this->hasMany(Image::class);
     }
 
     /**

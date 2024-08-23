@@ -35,7 +35,8 @@ class ReportController extends Controller
             }])
             ->withCount(['points as total_goals' => function ($query) use ($dateRange) {
                 $query->whereBetween('date', $dateRange);
-            }]);
+            }])
+            ->orderBy('name', 'asc'); // Add this line to sort users alphabetically
 
         $debug['userPointsQuery'] = $userPointsQuery->toSql();
         $debug['userPointsQueryBindings'] = $userPointsQuery->getBindings();
@@ -48,8 +49,8 @@ class ReportController extends Controller
             });
 
         $groupPointsQuery = Group::withSum(['points as total_points' => function ($query) use ($dateRange) {
-                $query->whereBetween('date', $dateRange);
-            }], 'points')
+            $query->whereBetween('date', $dateRange);
+        }], 'points')
             ->withAvg(['points as average_points' => function ($query) use ($dateRange) {
                 $query->whereBetween('date', $dateRange);
             }], 'points')
@@ -58,7 +59,8 @@ class ReportController extends Controller
             }])
             ->withCount(['points as total_goals' => function ($query) use ($dateRange) {
                 $query->whereBetween('date', $dateRange);
-            }]);
+            }])
+            ->orderBy('name', 'asc'); // Add this line to sort groups alphabetically
 
         $debug['groupPointsQuery'] = $groupPointsQuery->toSql();
         $debug['groupPointsQueryBindings'] = $groupPointsQuery->getBindings();

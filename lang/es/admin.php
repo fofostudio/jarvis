@@ -206,9 +206,13 @@ return [
     'last_month_total'=> 'Total Ultimo mes',
     'all_time_total'=> 'Total Final Puntos',
     'girls_per_platform'=> 'Chicas por Plataforma',
-    'scroll_to_see_more_groups' => 'Scroll para ver más grupos',
+    'scroll_to_see_more_groups' => 'Deslice  para ver más grupos',
     'search_by_name_or_code'=> 'Buscar por Codigo o Nombre',
     'all_platforms'=> 'Todas las Plataformas',
+    'audit'=> 'Auditorias',
+    'digital_content'=> 'Contenido Digital',
+    'SAfoodProducts'=> 'Administrar Productos',
+
 
 
 

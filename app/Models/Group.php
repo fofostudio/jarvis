@@ -27,6 +27,10 @@ class Group extends Model
                     ->withTimestamps();
 
     }
+    public function workPlans()
+{
+    return $this->hasMany(WorkPlan::class);
+}
     public function platforms()
     {
         return $this->belongsToMany(Platform::class, 'girls', 'group_id', 'platform_id')->distinct();

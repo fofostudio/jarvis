@@ -102,11 +102,11 @@ class SessionLogController extends Controller
     {
         switch ($shift) {
             case 'morning':
-                return Carbon::createFromTime(6, 0, 0);
+                return Carbon::createFromTime(6, 15, 0);
             case 'afternoon':
-                return Carbon::createFromTime(14, 0, 0);
+                return Carbon::createFromTime(14, 15, 0);
             case 'night':
-                return Carbon::createFromTime(22, 0, 0);
+                return Carbon::createFromTime(22, 15, 0);
             default:
                 return null;
         }

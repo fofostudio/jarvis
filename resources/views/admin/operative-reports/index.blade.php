@@ -123,7 +123,7 @@
     <!-- Tabla de Reportes Aprobados y Rechazados -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Reportes Aprobados y Rechazados</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Reportes Aprobados e Incompleto</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -157,7 +157,7 @@
                                     @if ($report->is_approved)
                                         <span class="badge badge-success bg-success">Aprobado</span>
                                     @else
-                                        <span class="badge badge-danger bg-danger">Rechazado</span>
+                                        <span class="badge badge-danger bg-danger">Incompleto</span>
                                     @endif
                                 </td>
                                 <td>

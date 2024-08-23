@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\SessionLogController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AutomatedTaskController;
 use App\Http\Controllers\BreakController;
 use App\Http\Controllers\DashboardController;
@@ -32,9 +33,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/points-dashboard', [PointController::class, 'dashboard'])->name('points.dashboard');
     Route::get('/automated-task/platform/{platform}', [AutomatedTaskController::class, 'platformTasks'])->name('automated_task.platform');
     Route::get('/my-points', [OperatorController::class, 'myPoints'])->name('my_points');
@@ -86,6 +87,19 @@ Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::get('/admin/session-logs', [SessionLogController::class, 'index'])->name('admin.session_logs.index');
     Route::post('/points/groups', [PointController::class, 'groups'])->name('points.groups');
     Route::post('/points/preview', [PointController::class, 'preview'])->name('points.preview');
+
+    Route::get('/work-plans', [WorkPlanController::class, 'index'])->name('work_plans.index');
+    Route::post('/work-plans/generate', [WorkPlanController::class, 'generate'])->name('work_plans.generate');
+    Route::put('/work-plans/{workPlan}', [WorkPlanController::class, 'update'])->name('work_plans.update');
+    Route::resource('audits', AuditController::class);
+    Route::get('/digital', [PointController::class, 'index'])->name('digital.index');
+    Route::get('/footitems', [PointController::class, 'index'])->name('fooditems.index');
+    Route::get('/extension', [PointController::class, 'index'])->name('extension_chrome.index');
+    Route::get('/task', [PointController::class, 'index'])->name('automatized_task.index');
+    Route::get('/permissions', [PointController::class, 'index'])->name('permissions_and_roles.index');
+    Route::get('/jarvis-settings', [PointController::class, 'index'])->name('settings_jarvis.index');
+    Route::get('/safood', [PointController::class, 'index'])->name('SAfoodProducts.index');
+
     Route::get('/assign-operators', [GroupController::class, 'assignOperatorsForm'])->name('groups.assign-operators-form');
     Route::post('/assign-operators', [GroupController::class, 'assignOperators'])->name('groups.assign-operators');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

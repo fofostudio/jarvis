@@ -25,8 +25,45 @@
                 <h5 class="mb-1">Fav Automatico</h5>
                 <small>Estado: Desactivado</small>
             </div>
-            <p class="mb-1">Generar Favs de forma automatica en pantalla Principal.</p>
+            <p class="mb-1">Generar Favs/Likes de forma automatica en pantalla Principal.</p>
         </a>
+        <a href="#" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">Verifica Stories</h5>
+                <small>Estado: Desactivado</small>
+            </div>
+            <p class="mb-1">Verifica si tiene stories activas en este momento, si no activa stories de la modelo.</p>
+        </a>
+        <a href="#" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">Mensaje Masivo Automatico</h5>
+                <small>Estado: Desactivado</small>
+            </div>
+            <p class="mb-1">Envia Mensajes automaticamente al azar a chats en Activos.</p>
+        </a>
+        <a href="#" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">Mensaje Masivo con Foto Automatico</h5>
+                <small>Estado: Desactivado</small>
+            </div>
+            <p class="mb-1">Envia Mensajes con Foto automaticamente al azar a chats en Activos.</p>
+        </a>
+        <a href="#" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">Mensaje Masivo MAIL con Foto Automatico</h5>
+                <small>Estado: Desactivado</small>
+            </div>
+            <p class="mb-1">Envia Mensajes MAIL con Foto automaticamente al azar a chats en Activos.</p>
+        </a>
+        <a href="#" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">Scrap Web</h5>
+                <small>Estado: Desactivado</small>
+            </div>
+            <p class="mb-1">Extrae Datos de la Plataforma.</p>
+        </a>
+
+
         <!-- Fin del ejemplo de tarea -->
     </div>
 

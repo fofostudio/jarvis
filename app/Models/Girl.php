@@ -20,4 +20,8 @@ class Girl extends Model
     {
         return $this->belongsTo(Group::class);
     }
+    public function workPlanAssignments()
+{
+    return $this->hasMany(WorkPlanAssignment::class);
+}
 }

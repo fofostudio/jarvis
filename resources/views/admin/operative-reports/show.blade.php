@@ -33,7 +33,7 @@
                             @elseif ($report->is_approved)
                                 <span class="badge badge-success bg-success">Aprobado</span>
                             @else
-                                <span class="badge badge-danger bg-danger">Rechazado</span>
+                                <span class="badge badge-danger bg-danger">Incompleto</span>
                             @endif
                         </p>
                     </div>
@@ -47,57 +47,74 @@
                                     <option value="">Pendiente</option>
                                     <option value="1" {{ $report->is_approved === true ? 'selected' : '' }}>Aprobado
                                     </option>
-                                    <option value="0" {{ $report->is_approved === false ? 'selected' : '' }}>Rechazado
+                                    <option value="0" {{ $report->is_approved === false ? 'selected' : '' }}>Incompleto
                                     </option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="auditor_comment">Observaciones del Auditor</label>
                                 <textarea name="auditor_comment" id="auditor_comment" rows="3" class="form-control">{{ $report->auditor_comment }}</textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Actualizar Estado y Observaciones</button>
+                            </div><br/>
+                            <button type="submit" class="btn btn-dark">Actualizar Estado y Observaciones</button>
                         </form>
                     </div>
                 </div>
+
                 <hr>
                 <h5>Contenido del Reporte</h5>
-                 @if ($report->report_type === 'manual')
-                <div class="border p-3">
-                    <h6>Contenido general:</h6>
-                    {!! $report->content !!}
-                    @if($report->content_quejas)
-                        <h6 class="mt-3">Quejas:</h6>
-                        {!! $report->content_quejas !!}
-                    @endif
-                </div>
-            @elseif ($report->report_type === 'conversational')
-
-                @if(is_array($report->conversations))
-                    @foreach ($report->conversations as $conversation)
-                        <div class="border p-3 mb-3">
-                            <p><strong>Código Caballero:</strong> {{ $conversation['gentleman_code'] ?? 'N/A' }}</p>
-                            <p><strong>Código Dama:</strong> {{ $conversation['lady_code'] ?? 'N/A' }}</p>
-                            <p><strong>Resumen Conversación:</strong></p>
-                            <div>{!! $conversation['summary'] ?? 'No hay resumen disponible' !!}</div>
-                        </div>
-                    @endforeach
-                @elseif(is_array($report->conversations))
-                    <div class="border p-3 mb-3">
-                        <p><strong>Código Caballero:</strong> {{ $report->conversations['gentleman_code'] ?? 'N/A' }}</p>
-                        <p><strong>Código Dama:</strong> {{ $report->conversations['lady_code'] ?? 'N/A' }}</p>
-                        <p><strong>Resumen Conversación:</strong></p>
-                        <div>{!! $report->conversations['summary'] ?? 'No hay resumen disponible' !!}</div>
+                @if ($report->report_type === 'manual')
+                    <div class="border p-3">
+                        <h6>Contenido general:</h6>
+                        {!! $report->content !!}
+                        @if($report->content_quejas)
+                            <h6 class="mt-3">Quejas:</h6>
+                            {!! $report->content_quejas !!}
+                        @endif
                     </div>
-                @else
-                    <p>No hay datos de conversación disponibles o el formato es incorrecto.</p>
+                @elseif ($report->report_type === 'conversational')
+                    @if(is_array($report->conversations))
+                        @foreach ($report->conversations as $conversation)
+                            <div class="border p-3 mb-3">
+                                <p><strong>Código Caballero:</strong> {{ $conversation['gentleman_code'] ?? 'N/A' }}</p>
+                                <p><strong>Código Dama:</strong> {{ $conversation['lady_code'] ?? 'N/A' }}</p>
+                                <p><strong>Resumen Conversación:</strong></p>
+                                <div>{!! $conversation['summary'] ?? 'No hay resumen disponible' !!}</div>
+                            </div>
+                        @endforeach
+                    @elseif(is_array($report->conversations))
+                        <div class="border p-3 mb-3">
+                            <p><strong>Código Caballero:</strong> {{ $report->conversations['gentleman_code'] ?? 'N/A' }}</p>
+                            <p><strong>Código Dama:</strong> {{ $report->conversations['lady_code'] ?? 'N/A' }}</p>
+                            <p><strong>Resumen Conversación:</strong></p>
+                            <div>{!! $report->conversations['summary'] ?? 'No hay resumen disponible' !!}</div>
+                        </div>
+                    @else
+                        <p>No hay datos de conversación disponibles o el formato es incorrecto.</p>
+                    @endif
                 @endif
-            @endif
 
                 @if ($report->file_path)
                     <div class="mt-3">
                         <h6>Archivo adjunto:</h6>
                         <a href="{{ route('operative-reports.download', $report) }}"
                             class="btn btn-primary btn-sm">Descargar archivo</a>
+                    </div>
+                @endif
+
+                <!-- Nueva sección para imágenes -->
+                @if ($report->images->count() > 0)
+                    <div class="mt-4">
+                        <h6>Imágenes del reporte:</h6>
+                        <div class="d-flex flex-wrap">
+                            @foreach ($report->images as $image)
+                                <div class="m-2">
+                                    <a href="{{ asset('storage/' . $image->path) }}" target="_blank">
+                                        <img src="{{ asset('storage/' . $image->path) }}" alt="Imagen del reporte"
+                                             class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                 @endif
             </div>

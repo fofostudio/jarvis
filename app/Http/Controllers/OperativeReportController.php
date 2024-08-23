@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\GroupOperator;
 use App\Models\OperativeReport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class OperativeReportController extends Controller
 {
@@ -61,41 +63,78 @@ class OperativeReportController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'report_date' => 'required|date',
-            'report_type' => 'required|in:manual,conversational',
-            'report_content' => 'required_if:report_type,manual',
-            'gentleman_code' => 'required_if:report_type,conversational|array',
-            'lady_code' => 'required_if:report_type,conversational|array',
-            'conversation_summary' => 'required_if:report_type,conversational|array',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'report_date' => 'required|date',
+                'report_type' => 'required|in:manual,conversational',
+                'report_content' => 'required_if:report_type,manual',
+                'gentleman_code' => 'required_if:report_type,conversational|array',
+                'lady_code' => 'required_if:report_type,conversational|array',
+                'conversation_summary' => 'required_if:report_type,conversational|array',
+                'images' => 'nullable|array',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:20480',
+            ]);
 
-        $report = new OperativeReport();
-        $report->user_id = auth()->id();
-        $report->report_date = $request->report_date;
-        $report->report_type = $request->report_type;
-        $groupOperator = GroupOperator::where('user_id', auth()->id())->first();
-        if ($groupOperator) {
-            $report->group_id = $groupOperator->group_id;
-        }
+            DB::beginTransaction();
 
-        if ($request->report_type === 'manual') {
-            $report->content = $request->report_content;
-        } else {
-            $conversations = [];
-            foreach ($request->gentleman_code as $index => $gentlemanCode) {
-                $conversations[] = [
-                    'gentleman_code' => $gentlemanCode,
-                    'lady_code' => $request->lady_code[$index],
-                    'summary' => $request->conversation_summary[$index],
-                ];
+            $report = new OperativeReport();
+            $report->user_id = auth()->id();
+            $report->report_date = $request->report_date;
+            $report->report_type = $request->report_type;
+
+            $groupOperator = GroupOperator::where('user_id', auth()->id())->first();
+            if ($groupOperator) {
+                $report->group_id = $groupOperator->group_id;
             }
-            $report->content = json_encode($conversations);
+
+            if ($request->report_type === 'manual') {
+                $report->content = $request->report_content;
+            } else {
+                $conversations = [];
+                foreach ($request->gentleman_code as $index => $gentlemanCode) {
+                    $conversations[] = [
+                        'gentleman_code' => $gentlemanCode,
+                        'lady_code' => $request->lady_code[$index],
+                        'summary' => $request->conversation_summary[$index],
+                    ];
+                }
+                $report->content = json_encode($conversations);
+            }
+
+            $report->save();
+
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('report_images', 'public');
+                    $report->images()->create(['path' => $path]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reporte guardado exitosamente.',
+                'report' => $report,
+                'redirect' => route('my-operative-reports')
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al guardar el reporte: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el reporte: ' . $e->getMessage()
+            ], 500);
         }
-
-        $report->save();
-
-        return redirect()->route('my-operative-reports')->with('success', 'Reporte guardado exitosamente.');
     }
     /**
      * Display the specified report.
