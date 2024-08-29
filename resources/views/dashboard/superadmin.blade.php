@@ -3,73 +3,55 @@
 @section('content')
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">{{ __('admin.dashboard') }}</h1>
-        @php
-            $currentBreaks = \App\Models\BreakLog::with('user')
-                ->whereDate('start_time', \Carbon\Carbon::today())
-                ->whereNull('actual_end_time')
-                ->get();
-
-            $overtimeBreaks = \App\Models\BreakLog::with('user')
-                ->whereDate('start_time', \Carbon\Carbon::today())
-                ->where('overtime', '>', 0)
-                ->get();
-
-            // Fetch data for girls per platform
-            $girlsPerPlatform = \App\Models\Platform::withCount('girls')->get();
-        @endphp
-        <!-- Break Time Carousel -->
-        <div class="row">
+        <!-- Shift Selection -->
+        <div class="row mb-4">
             <div class="col-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Tiempo de Breaks</h6>
-                    </div>
-                    <div class="card-body">
-                        <div id="breakCarousel" class="carousel slide" data-ride="carousel">
-                            <div class="carousel-inner">
-                                @foreach ($currentBreaks->merge($overtimeBreaks)->chunk(4) as $breakChunk)
-                                    <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
-                                        <div class="row">
-                                            @foreach ($breakChunk as $break)
-                                                <div class="col-md-3 mb-3">
-                                                    <div class="card shadow h-100">
-                                                        <div class="card-body">
-                                                            <h5 class="card-title">{{ $break->user->name }}</h5>
-                                                            <h6 class="card-subtitle mb-2 text-muted">
-                                                                {{ $break->overtime ? 'Overtime Break' : 'Current Break' }}
-                                                            </h6>
-                                                            <p class="card-text">
-                                                                Inicio: {{ $break->start_time->format('H:i:s') }}<br>
-                                                                @if ($break->overtime)
-                                                                    Excede: {{ gmdate('H:i:s', $break->overtime) }}
-                                                                @else
-                                                                    <span class="break-countdown"
-                                                                        data-end-time="{{ $break->expected_end_time->timestamp }}">
-                                                                        Tiempo Restante: Calculando...
-                                                                    </span>
-                                                                @endif
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <a class="carousel-control-prev" href="#breakCarousel" role="button" data-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="sr-only">Siguiente</span>
-                            </a>
-                            <a class="carousel-control-next" href="#breakCarousel" role="button" data-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="sr-only">Anterior</span>
-                            </a>
+                <div class="card shadow">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.shift_selection') }}</h6>
+                        <div class="dropdown no-arrow">
+                            <form id="shiftForm" action="{{ route('dashboard') }}" method="GET">
+                                <select id="shiftSelector" name="shift" class="form-select" onchange="this.form.submit()">
+                                    @foreach ($shifts as $shift)
+                                        <option value="{{ $shift }}"
+                                            {{ $selectedShift == $shift ? 'selected' : '' }}>
+                                            {{ __('admin.shift_' . $shift) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Active Operators Cards -->
+        <div class="row mb-4">
+            @php
+                $operators = $activeOperatorsDetails->unique('id_operador');
+                $onBreakOperators = $operators->where('is_on_break', true);
+                $workingOperators = $operators->where('is_on_break', false)->where('status', 'Laborando');
+                $inactiveOperators = $operators->where('status', '!=', 'Laborando')->where('is_on_break', false);
+            @endphp
+
+            @foreach ($onBreakOperators as $operator)
+                @include('partials.operator_card', ['operator' => $operator, 'cardClass' => 'bg-warning'])
+            @endforeach
+
+            @foreach ($workingOperators as $operator)
+                @include('partials.operator_card', ['operator' => $operator, 'cardClass' => 'bg-success'])
+            @endforeach
+
+            @foreach ($inactiveOperators as $operator)
+                @include('partials.operator_card', [
+                    'operator' => $operator,
+                    'cardClass' => 'bg-secondary',
+                ])
+            @endforeach
+        </div>
+
+        <!-- Points Summary Cards -->
         <div class="row">
             <!-- Today's Points Card -->
             <div class="col-xl-4 col-md-6 mb-4">
@@ -87,7 +69,6 @@
                     </div>
                 </div>
             </div>
-
 
             <!-- This Month's Points Card -->
             <div class="col-xl-4 col-md-6 mb-4">
@@ -125,47 +106,32 @@
         </div>
 
 
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.shift_selection') }}</h6>
-                        <div class="dropdown no-arrow">
-                            <select id="shiftSelector" class="form-select" onchange="this.form.submit()">
-                                @foreach ($shifts as $shift)
-                                    <option value="{{ $shift }}" {{ $selectedShift == $shift ? 'selected' : '' }}>
-                                        {{ __('admin.shift_' . $shift) }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-
-        <!-- Super Admin / Admin Dashboard -->
+        <!-- Statistics Cards -->
         <div class="row">
-            <!-- Active Operators Card -->
+            <!-- Total Groups Card -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card border-left-success shadow h-100 py-2">
+
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">
                                     {{ __('admin.active_operators') }}</div>
+
+
+
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $activeOperators }}</div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                                <i class="fas fa-layer-group fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
-
-            <!-- Total Groups Card -->
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-left-success shadow h-100 py-2">
                     <div class="card-body">
@@ -219,54 +185,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="row">
-            <!-- Daily Group Chart -->
-            <div class="col-xl-9 col-lg-7">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.daily_group_points') }}</h6>
-                        <div class="text-xs font-weight-bold text-primary">
-                            Último registro: {{ \Carbon\Carbon::parse($latestPointsDate)->format('d/m/Y') }}
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-bar">
-                            <canvas id="dailyGroupChart" data-chart-data="{{ json_encode($dailyGroupData) }}"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- New Girls per Platform Pie Chart -->
-
-            <div class="col-xl-3 col-lg-4">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.girls_per_platform') }}</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-pie">
-                            <canvas id="girlsPerPlatformChart"
-                                data-chart-data="{{ json_encode($girlsPerPlatform) }}"></canvas>
-
-                        </div>
-                    </div>
-                </div>
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.weekly_total_points') }}</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-bar">
-                            <canvas id="weeklyTotalChart" data-chart-data="{{ json_encode($dailyTotalData) }}"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Monthly Total Points vs Goals Chart -->
-
-        </div>
-
         @php
             // Calcular el total de puntos del mes actual
             $currentMonthTotalPoints = \App\Models\Point::whereMonth('created_at', now()->month)
@@ -287,10 +205,23 @@
                     ? (($currentMonthTotalPoints - $lastMonthTotalPoints) / $lastMonthTotalPoints) * 100
                     : 100;
         @endphp
-
-        <!-- New Total Points Comparison Card -->
-        <div class="row mb-4">
-            <div class="col-12">
+        <!-- Charts Row -->
+        <div class="row">
+            <!-- Daily Group Chart -->
+            <div class="col-xl-8 col-lg-7">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.daily_group_points') }}</h6>
+                        <div class="text-xs font-weight-bold text-primary">
+                            Último registro: {{ \Carbon\Carbon::parse($latestPointsDate)->format('d/m/Y') }}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-bar">
+                            <canvas id="dailyGroupChart" data-chart-data="{{ json_encode($dailyGroupData) }}"></canvas>
+                        </div>
+                    </div>
+                </div>
                 <div class="card shadow">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.total_points_comparison') }}</h6>
@@ -302,14 +233,16 @@
                                     {{ __('admin.current_month_total') }}
                                 </div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    {{ number_format($currentMonthTotalPoints) }}</div>
+                                    {{ number_format($currentMonthTotalPoints) }}
+                                </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                     {{ __('admin.last_month_total') }}
                                 </div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    {{ number_format($lastMonthTotalPoints) }}</div>
+                                    {{ number_format($lastMonthTotalPoints) }}
+                                </div>
                                 <div class="text-xs {{ $percentageChange >= 0 ? 'text-success' : 'text-danger' }}">
                                     {{ $percentageChange >= 0 ? '+' : '' }}{{ number_format($percentageChange, 2) }}%
                                 </div>
@@ -319,13 +252,43 @@
                                     {{ __('admin.all_time_total') }}
                                 </div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    {{ number_format($allTimeTotalPoints) }}</div>
+                                    {{ number_format($allTimeTotalPoints) }}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Girls per Platform Pie Chart -->
+            <div class="col-xl-4 col-lg-5">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.girls_per_platform') }}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-pie">
+                            <canvas id="girlsPerPlatformChart"
+                                data-chart-data="{{ json_encode($girlsPerPlatform) }}"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.weekly_total_points') }}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-bar">
+                            <canvas id="weeklyTotalChart" data-chart-data="{{ json_encode($dailyTotalData) }}"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+
+
+        <!-- Monthly Total Points vs Goals Chart -->
         <div class="row">
             <div class="col-12">
                 <div class="card shadow mb-4">
@@ -347,17 +310,172 @@
             </div>
         </div>
 
-
-
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+@endsection
 
-
-
+@section('javascript')
     <script>
-        // dashboard.js
+        function updateShift() {
+            const now = new Date();
+            const hour = now.getHours();
+            let currentShift;
 
+            if (hour >= 6 && hour < 14) {
+                currentShift = 'morning';
+            } else if (hour >= 14 && hour < 22) {
+                currentShift = 'afternoon';
+            } else {
+                currentShift = 'night';
+            }
+
+            const shiftSelector = document.getElementById('shiftSelector');
+            if (shiftSelector.value !== currentShift) {
+                shiftSelector.value = currentShift;
+                document.getElementById('shiftForm').submit();
+            }
+        }
+
+        // Actualizar inmediatamente y luego cada minuto
+        updateShift();
+        setInterval(updateShift, 60000);
+
+        // Opcional: actualizar también cuando la pestaña vuelve a estar activa
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                updateShift();
+            }
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            const operatorCards = {};
+
+            function initializeOperatorCards() {
+                $('.operator-card').each(function() {
+                    const $card = $(this);
+                    const operatorId = $card.data('operator-id');
+                    operatorCards[operatorId] = $card;
+                });
+            }
+
+            function updateCountdown() {
+                $('.countdown').each(function() {
+                    const $this = $(this);
+                    const startTime = moment($this.data('start'));
+                    const now = moment();
+                    const duration = moment.duration(startTime.add(30, 'minutes').diff(now));
+
+                    if (duration.asSeconds() > 0) {
+                        $this.text('Tiempo restante: ' + moment.utc(duration.asMilliseconds()).format(
+                            'mm:ss'));
+                    } else {
+                        const overtime = moment.duration(now.diff(startTime.add(30, 'minutes')));
+                        $this.text('Sobrepasó: ' + moment.utc(overtime.asMilliseconds()).format(
+                            'HH:mm:ss'));
+                        $this.removeClass('countdown').addClass('text-danger overtime');
+
+                        const $card = $this.closest('.operator-card');
+                        $card.removeClass('bg-warning').addClass('bg-danger text-white');
+                        $card.find('.badge').removeClass('bg-dark').addClass('bg-light text-dark');
+                        $card.find('.toggle-break').removeClass('btn-warning').addClass('btn-light');
+                    }
+                });
+            }
+
+            function reorderCards() {
+                const $container = $('.operator-cards-container');
+                const cards = Object.values(operatorCards).sort((a, b) => getCardOrder(a) - getCardOrder(b));
+                $container.empty().append(cards);
+            }
+
+            function getCardOrder($card) {
+                const status = $card.find('.status-text .badge').text().trim();
+                if (status === 'Activo Break') return 1;
+                if (status === 'Excede Break') return 2;
+                if (status === 'Laborando') return 3;
+                return 4; // Inactivo
+            }
+
+            function updateCardAfterToggle($card, response) {
+                const $cardBody = $card.find('.card-body');
+                const $button = $card.find('.toggle-break');
+                const $statusBadge = $card.find('.status-text .badge');
+                const $cardText = $card.find('.card-text');
+
+                $button.text(response.is_on_break ? 'Finalizar Break' : 'Iniciar Break');
+                $button.toggleClass('btn-dark btn-dark');
+
+                $cardBody.removeClass('bg-success bg-warning bg-danger text-white text-dark')
+                    .addClass(response.is_on_break ? 'bg-warning text-dark' : 'bg-success text-white');
+
+                $statusBadge.text(response.is_on_break ? 'Activo Break' : 'Laborando');
+                $statusBadge.removeClass('bg-light text-dark bg-dark text-white')
+                    .addClass(response.is_on_break ? 'bg-dark text-white' : 'bg-dark text-white');
+                if (response.is_on_break) {
+                    const now = moment();
+                    $cardText.find('.countdown, .overtime').remove();
+                    $cardText.append('<br><span class="countdown" data-start="' + now.format() +
+                        '">Tiempo restante: 30:00</span>');
+                } else {
+                    $card.find('.countdown, .overtime').remove();
+                    $button.removeClass('btn-light');
+                }
+            }
+
+            $(document).on('click', '.toggle-break', function() {
+                const userId = $(this).data('user-id');
+                const $card = operatorCards[userId];
+
+                $.ajax({
+                    url: "{{ route('toggle.break', ['userId' => ':userId']) }}".replace(':userId',
+                        userId),
+                    type: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            updateCardAfterToggle($card, response);
+                            reorderCards();
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Éxito!',
+                                text: response.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message || 'Ha ocurrido un error'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: xhr.responseJSON && xhr.responseJSON.message ? xhr
+                                .responseJSON.message :
+                                'Ha ocurrido un error en la solicitud'
+                        });
+                    }
+                });
+            });
+
+            // Inicialización
+            initializeOperatorCards();
+            setInterval(updateCountdown, 1000);
+            setInterval(reorderCards, 5000);
+            updateCountdown();
+            reorderCards();
+
+            // Prueba de SweetAlert
+            // Swal.fire('Hello world!');
+        });
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             initAdminDashboard();
             initGirlsPerPlatformChart();
@@ -490,16 +608,12 @@
                             `Tiempo Restante: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     } else {
                         element.textContent = 'Break finalizado';
-                        // Opcionalmente, podrías querer actualizar el estilo o la clase del elemento aquí
                         element.classList.add('break-finished');
                     }
                 }
 
-                // Actualiza inmediatamente y luego cada segundo
                 updateCountdown();
                 const intervalId = setInterval(updateCountdown, 1000);
-
-                // Limpia el intervalo cuando el componente se desmonte (opcional, dependiendo de tu setup)
                 element.dataset.intervalId = intervalId;
             });
         }
@@ -510,7 +624,6 @@
                 clearInterval(parseInt(element.dataset.intervalId));
             });
         }
-
 
         function initMonthlyTotalChart() {
             var ctx = document.getElementById('monthlyTotalChart').getContext('2d');

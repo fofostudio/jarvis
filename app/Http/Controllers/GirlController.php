@@ -9,6 +9,17 @@ use Illuminate\Http\Request;
 
 class GirlController extends Controller
 {
+    public function search(Request $request)
+    {
+        $term = $request->input('term');
+
+        $girls = Girl::where('name', 'LIKE', "%$term%")
+                     ->orWhere('username', 'LIKE', "%$term%")
+                     ->orWhere('internal_id', 'LIKE', "%$term%")
+                     ->get(['id', 'name', 'username', 'internal_id']);
+
+        return response()->json($girls);
+    }
     public function index(Request $request)
     {
         $query = Girl::with(['platform', 'group']);
@@ -21,6 +32,7 @@ class GirlController extends Controller
                   ->orWhere('internal_id', 'LIKE', "%{$search}%");
             });
         }
+
 
         // Aplicar filtro de plataforma
         if ($request->has('platform')) {

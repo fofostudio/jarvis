@@ -40,7 +40,6 @@ class ProfileController extends Controller
 
         $user->name = $validatedData['name'];
         $user->email = $validatedData['email'];
-        $user->username = $validatedData['email'];
         $user->phone = $validatedData['phone'];
         $user->address = $validatedData['address'];
         $user->neighborhood = $validatedData['neighborhood'];

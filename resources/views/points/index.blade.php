@@ -5,9 +5,13 @@
         <a class="text-reset" href="{{ url('dashboard') }}">{{ __('admin.dashboard') }}</a>
         <i class="bi-chevron-right me-1 fs-6"></i>
         <span class="text-muted">{{ __('admin.points') }} ({{ $points->count() }})</span>
-        <a href="{{ route('points.create') }}" class="btn btn-sm btn-dark float-lg-end mt-1 mt-lg-0">
-            <i class="bi-plus-lg"></i> {{ __('admin.add_points') }}
-        </a>
+        @if (auth()->user()->role == 'admin')
+        @else
+            <a href="{{ route('points.create') }}" class="btn btn-sm btn-dark float-lg-end mt-1 mt-lg-0">
+                <i class="bi-plus-lg"></i> {{ __('admin.add_points') }}
+            </a>
+        @endif
+
     </h5>
 
     <div class="content">
@@ -160,19 +164,4 @@
     </div>
     </div>
     </div>
-
-    <script>
-        function filterRecords(date) {
-            $.ajax({
-                url: "{{ route('points.index') }}",
-                data: {
-                    date: date
-                },
-                success: function(response) {
-                    // Actualizar la sección de registros en la vista con la respuesta del servidor
-                    $('.records-section').html(response);
-                }
-            });
-        }
-    </script>
 @endsection

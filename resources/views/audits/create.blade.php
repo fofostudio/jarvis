@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <div class="container">
     <h1 class="mb-4">Crear Nueva Auditoría</h1>
 
@@ -47,9 +51,18 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="dama_id">ID Dama</label>
-                            <input type="text" name="dama_id" id="dama_id" class="form-control" required>
+                            <label for="girl_search">Buscar Chica</label>
+                            <input type="text" id="girl_search" class="form-control" placeholder="Buscar por nombre, username o ID interno">
                         </div>
+                        <div class="mb-3">
+                            <label for="girl_id">ID Chica</label>
+                            <input type="text" name="girl_id" id="girl_id" class="form-control" required readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="girl_name">Nombre Chica</label>
+                            <input type="text" name="girl_name" id="girl_name" class="form-control" required readonly>
+                        </div>
+
                     </div>
                 </div>
 
@@ -143,11 +156,10 @@
         <button type="submit" class="btn btn-primary btn-lg">Guardar Auditoría</button>
     </form>
 </div>
+@endsection
 
 
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+@push('scripts')
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -177,15 +189,52 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-
-    // Autocompletar para ID Dama
-    const damaInput = document.getElementById('dama_id');
-    const damas = @json($damas); // Asegúrate de pasar esta variable desde el controlador
-
-    $(damaInput).autocomplete({
-        source: damas.map(dama => dama.id_int),
-        minLength: 2
-    });
 });
 </script>
-@endsection
+<script>
+    function loadJQueryUI(callback) {
+        if (typeof jQuery.ui === 'undefined') {
+            var script = document.createElement('script');
+            script.src = 'https://code.jquery.com/ui/1.12.1/jquery-ui.min.js';
+            script.onload = callback;
+            document.head.appendChild(script);
+        } else {
+            callback();
+        }
+    }
+
+    $(document).ready(function() {
+        loadJQueryUI(function() {
+            $("#girl_search").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "{{ route('girls.search') }}",
+                        dataType: "json",
+                        data: {
+                            term: request.term
+                        },
+                        success: function(data) {
+                            response(data.map(function(item) {
+                                return {
+                                    label: item.name + ' (' + item.username + ' - ' + item.internal_id + ')',
+                                    value: item.name,
+                                    id: item.internal_id,
+                                    name: item.name
+                                };
+                            }));
+                        }
+                    });
+                },
+                minLength: 2,
+                select: function(event, ui) {
+                    $("#girl_id").val(ui.item.id);
+                    $("#girl_name").val(ui.item.name);
+                }
+            });
+        });
+
+        // ... resto de tu código JavaScript ...
+    });
+    </script>
+
+@endpush

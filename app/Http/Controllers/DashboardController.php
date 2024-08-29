@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BreakLog;
 use App\Models\Group;
 use App\Models\User;
 use App\Models\Point;
@@ -39,6 +40,42 @@ class DashboardController extends Controller
                 $query->whereDate('date', Carbon::today());
             })->count();
 
+        $activeOperatorsDetails = User::where('role', 'operator')
+            ->whereHas('sessionLogs', function ($query) {
+                $query->whereDate('date', Carbon::today());
+            })
+            ->with(['groups', 'sessionLogs' => function ($query) {
+                $query->whereDate('date', Carbon::today())->latest();
+            }, 'breakLogs' => function ($query) {
+                $query->whereDate('start_time', Carbon::today());
+            }])
+            ->get()
+            ->map(function ($operator) {
+                $latestSessionLog = $operator->sessionLogs->first();
+                $currentBreak = $operator->breakLogs->where('actual_end_time', null)->first();
+                $breakTakenToday = $operator->breakLogs->isNotEmpty();
+
+                $status = 'Laborando';
+                if (!$latestSessionLog || $latestSessionLog->end_time) {
+                    $status = 'Inactivo';
+                } elseif ($currentBreak) {
+                    $status = $currentBreak->overtime > 0 ? 'Excede Break' : 'Activo Break';
+                }
+
+                return [
+                    'id_operador' => $operator->id,
+                    'name' => $operator->name,
+                    'current_group' => $this->getCurrentGroup($operator),
+                    'session_start' => $latestSessionLog ? $latestSessionLog->first_login : null,
+                    'session_end' => $latestSessionLog ? $latestSessionLog->last_logout : null,
+                    'is_on_break' => $currentBreak !== null,
+                    'break_start' => $currentBreak ? $currentBreak->start_time : null,
+                    'break_overtime' => $currentBreak && $currentBreak->overtime > 0 ? $currentBreak->overtime : 0,
+                    'status' => $status,
+                    'break_taken' => $breakTakenToday,
+                ];
+            });
+
         $totalGroups = Group::count();
         $totalGirls = Girl::count();
         $totalPlatforms = Platform::count();
@@ -46,14 +83,14 @@ class DashboardController extends Controller
         $shifts = ['morning', 'afternoon', 'night'];
         $selectedShift = request('shift', 'morning');
         $latestPointsDate = Point::max('date');
+
         // Data for daily group chart
         $dailyGroupData = Point::select('group_id', DB::raw('SUM(points) as total_points'), DB::raw('SUM(goal) as total_goal'))
-        ->whereDate('date', $latestPointsDate)
-        ->where('shift', $selectedShift)
-        ->groupBy('group_id')
-        ->with('group')
-        ->get();
-
+            ->whereDate('date', $latestPointsDate)
+            ->where('shift', $selectedShift)
+            ->groupBy('group_id')
+            ->with('group')
+            ->get();
 
         // Data for total points by day chart
         $dailyTotalData = Point::select('date', DB::raw('SUM(points) as total_points'), DB::raw('SUM(goal) as total_goal'))
@@ -82,7 +119,6 @@ class DashboardController extends Controller
             ->where('shift', $selectedShift)
             ->sum('points');
 
-        // Calculate total points (this wasn't in the original code)
         $totalPoints = Point::where('shift', $selectedShift)->sum('points');
         $totalGoal = Point::where('shift', $selectedShift)->sum('goal');
 
@@ -104,6 +140,7 @@ class DashboardController extends Controller
 
         return view('dashboard.superadmin', compact(
             'activeOperators',
+            'activeOperatorsDetails',
             'totalGroups',
             'totalGirls',
             'totalPlatforms',
@@ -111,7 +148,7 @@ class DashboardController extends Controller
             'selectedShift',
             'dailyGroupData',
             'dailyTotalData',
-            'latestPointsDate', // Añadir esta nueva variable
+            'latestPointsDate',
             'todayPoints',
             'yesterdayPoints',
             'thisMonthPoints',
@@ -124,6 +161,26 @@ class DashboardController extends Controller
             'currentMonthData',
             'previousMonthData'
         ));
+    }
+
+
+    private function getCurrentGroup($operator)
+    {
+        $currentShift = $this->getCurrentShift();
+        return $operator->groups()
+            ->first();
+    }
+
+    private function getCurrentShift()
+    {
+        $hour = now()->hour;
+        if ($hour >= 6 && $hour < 14) {
+            return 'morning';
+        } elseif ($hour >= 14 && $hour < 22) {
+            return 'afternoon';
+        } else {
+            return 'night';
+        }
     }
     public function getMonthlyTotals(Request $request)
     {
@@ -158,12 +215,69 @@ class DashboardController extends Controller
             return response()->json(['error' => 'An error occurred while fetching monthly totals'], 500);
         }
     }
+    public function toggleBreak($userId)
+    {
+        $operator = User::findOrFail($userId);
+        $today = now()->toDateString();
+
+        // Check if the operator has already taken a break today
+        $todayBreak = $operator->breakLogs()
+            ->whereDate('start_time', $today)
+            ->first();
+
+        if ($operator->is_on_break) {
+            // If the operator is on break, end the break
+            $breakLog = $operator->breakLogs()->whereNull('actual_end_time')->latest()->first();
+            if ($breakLog) {
+                $breakLog->actual_end_time = now();
+                $breakLog->overtime = max(0, $breakLog->actual_end_time->diffInSeconds($breakLog->expected_end_time));
+                $breakLog->save();
+
+                $operator->is_on_break = false;
+                $operator->save();
+
+                return response()->json([
+                    'success' => true,
+                    'is_on_break' => false,
+                    'message' => 'Break finalizado correctamente.',
+                ]);
+            }
+        } elseif (!$todayBreak) {
+            // If the operator hasn't taken a break today, start a new break
+            $breakLog = new BreakLog([
+                'user_id' => $operator->id,
+                'start_time' => now(),
+                'expected_end_time' => now()->addMinutes(30),
+            ]);
+            $breakLog->save();
+
+            $operator->is_on_break = true;
+            $operator->save();
+
+            return response()->json([
+                'success' => true,
+                'is_on_break' => true,
+                'message' => 'Break iniciado correctamente.',
+            ]);
+        } else {
+            // If the operator has already taken a break today
+            return response()->json([
+                'success' => false,
+                'message' => 'Ya has tomado tu break diario.',
+            ], 400);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No se pudo procesar la solicitud de break.',
+        ], 400);
+    }
+
 
     private function operatorDashboard($user)
     {
         $currentShift = $this->getCurrentShift();
         $groupOperator = GroupOperator::where('user_id', $user->id)
-            ->where('shift', $currentShift)
             ->first();
 
         $assignedGroup = $groupOperator ? $groupOperator->group : null;
@@ -203,33 +317,9 @@ class DashboardController extends Controller
             'chartData',
             'currentShift',
             'lastLogins',
+            'groupOperator',
             'isOnBreak',
             'assignedShift'
         ));
-    }
-    private function getCurrentShift()
-    {
-        // Asumimos que el usuario actual es el operador
-        $user = Auth::user();
-
-        // Obtenemos el GroupOperator actual para el usuario
-        $groupOperator = GroupOperator::where('user_id', $user->id)
-            ->first();
-
-        if ($groupOperator) {
-            return $groupOperator->shift;
-        }
-
-        // Si no hay una asignación para hoy, podríamos buscar la más reciente
-        $latestGroupOperator = GroupOperator::where('user_id', $user->id)
-            ->orderBy('date', 'desc')
-            ->first();
-
-        if ($latestGroupOperator) {
-            return $latestGroupOperator->shift;
-        }
-
-        // Si no hay asignación, podríamos retornar un valor por defecto o null
-        return null; // o 'unassigned' o cualquier otro valor por defecto que prefieras
     }
 }

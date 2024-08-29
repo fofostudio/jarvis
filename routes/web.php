@@ -74,6 +74,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::resource('platforms', PlatformController::class);
     Route::resource('girls', GirlController::class);
+    Route::get('/girls/search', [GirlController::class, 'search'])->name('girls.search');
     Route::resource('groups', GroupController::class);
     Route::resource('users', UserController::class);
     Route::get('users-admin', [UserController::class, 'indexadmin'])->name('admin.users');
@@ -87,7 +88,7 @@ Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::get('/admin/session-logs', [SessionLogController::class, 'index'])->name('admin.session_logs.index');
     Route::post('/points/groups', [PointController::class, 'groups'])->name('points.groups');
     Route::post('/points/preview', [PointController::class, 'preview'])->name('points.preview');
-
+    Route::post('/toggle-break/{userId}', [DashboardController::class, 'toggleBreak'])->name('toggle.break');
     Route::get('/work-plans', [WorkPlanController::class, 'index'])->name('work_plans.index');
     Route::post('/work-plans/generate', [WorkPlanController::class, 'generate'])->name('work_plans.generate');
     Route::put('/work-plans/{workPlan}', [WorkPlanController::class, 'update'])->name('work_plans.update');

@@ -51,7 +51,7 @@
     </a>
 </li>
 <li class="nav-item">
-    <a href="{{ route('audits.index') }}" class="nav-link text-truncate @if (request()->routeIs('audit.*')) active @endif">
+    <a href="{{ route('audits.index') }}" class="nav-link text-truncate @if (request()->routeIs('audits.*')) active @endif">
         <i class="bi-clipboard-check me-2"></i> {{ __('admin.audit') }}
     </a>
 </li>

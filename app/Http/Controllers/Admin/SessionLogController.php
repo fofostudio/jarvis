@@ -3,35 +3,133 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\GroupOperator;
 use App\Models\SessionLog;
 use App\Models\User;
 use Carbon\Carbon;
+use DateInterval;
+use DatePeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SessionLogController extends Controller
 {
     public function index(Request $request)
     {
-        $query = SessionLog::with('user');
+        $currentWeek = Carbon::now();
 
-        if ($request->filled('start_date')) {
-            $query->where('date', '>=', $request->start_date);
+        if ($request->has('week')) {
+            [$year, $week] = explode('-', $request->input('week'));
+            $currentWeek->setISODate($year, $week);
         }
 
-        if ($request->filled('end_date')) {
-            $query->where('date', '<=', $request->end_date);
+        $prevWeek = $currentWeek->copy()->subWeek();
+        $nextWeek = $currentWeek->copy()->addWeek();
+
+        $startDate = $currentWeek->startOfWeek();
+        $endDate = $currentWeek->endOfWeek();
+
+        $currentWeekDates = collect(new DatePeriod($startDate, new DateInterval('P1D'), $endDate->addDay()))->map(function ($date) {
+            return $date;
+        });
+
+        $shifts = ['morning', 'afternoon', 'night'];
+        $attendanceData = [];
+
+        foreach ($shifts as $shift) {
+            $operators = User::where('role', 'Operator')
+                ->whereHas('groupOperators', function ($query) use ($shift) {
+                    $query->where('shift', $shift);
+                })
+                ->with(['groupOperators' => function ($query) use ($shift) {
+                    $query->where('shift', $shift);
+                }])
+                ->get();
+
+            $attendanceData[$shift] = $this->getAttendanceData($operators, $startDate, $endDate);
         }
 
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
+        $statistics = $this->getStatistics(collect($attendanceData)->flatten(1)->toArray());
 
-        $sessionLogs = $query->orderBy('date', 'desc')->paginate(15);
-        $users = User::all();
-
-        return view('admin.session_logs.index', compact('sessionLogs', 'users'));
+        return view('admin.session_logs.index', compact('currentWeek', 'prevWeek', 'nextWeek', 'currentWeekDates', 'shifts', 'attendanceData', 'statistics'));
     }
+
+    private function generateDateRange($startDate, $endDate)
+    {
+        $dates = [];
+        $currentDate = $startDate->copy();
+
+        while ($currentDate <= $endDate) {
+            $dates[] = $currentDate->format('Y-m-d');
+            $currentDate->addDay();
+        }
+
+        return $dates;
+    }
+
+    private function getAttendanceData($operators, $startDate, $endDate)
+    {
+        $attendanceData = [];
+
+        foreach ($operators as $operator) {
+            $userLogs = SessionLog::where('user_id', $operator->id)
+                ->whereBetween('date', [$startDate, $endDate])
+                ->get();
+
+            $attendanceData[$operator->id] = [
+                'name' => $operator->name,
+                'attendance' => [],
+            ];
+
+            foreach ($this->generateDateRange($startDate, $endDate) as $date) {
+                $log = $userLogs->firstWhere('date', $date);
+                if (!$log) {
+                    $attendanceData[$operator->id]['attendance'][$date] = 'absent';
+                } elseif ($log->first_login && $log->first_login <= $this->getShiftStartTime($operator->groupOperators->first()->shift)) {
+                    $attendanceData[$operator->id]['attendance'][$date] = 'on_time';
+                } else {
+                    $attendanceData[$operator->id]['attendance'][$date] = 'late';
+                }
+            }
+        }
+
+        return $attendanceData;
+    }
+
+    private function getStatistics($attendanceData)
+    {
+        $statistics = [
+            'top_attendance' => [],
+            'top_absence' => [],
+            'top_late' => [],
+        ];
+
+        foreach ($attendanceData as $userId => $userData) {
+            $attendanceCount = collect($userData['attendance'])->count(function ($status) {
+                return $status === 'on_time';
+            });
+            $absenceCount = collect($userData['attendance'])->count(function ($status) {
+                return $status === 'absent';
+            });
+            $lateCount = collect($userData['attendance'])->count(function ($status) {
+                return $status === 'late';
+            });
+
+            $statistics['top_attendance'][] = ['name' => $userData['name'], 'count' => $attendanceCount];
+            $statistics['top_absence'][] = ['name' => $userData['name'], 'count' => $absenceCount];
+            $statistics['top_late'][] = ['name' => $userData['name'], 'count' => $lateCount];
+        }
+
+        foreach ($statistics as &$stat) {
+            rsort($stat);
+            $stat = array_slice($stat, 0, 5);
+        }
+
+        return $statistics;
+    }
+
+
     public function myLogins(Request $request)
     {
         $user = Auth::user();

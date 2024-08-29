@@ -1,13 +1,13 @@
 <table id="recordsTable" class="table table-hover">
     <thead>
         <tr>
-            <th class="active">{{ trans('admin.user') }}</th>
-            <th class="active">{{ trans('admin.group') }}</th>
-            <th class="active">{{ trans('admin.shift') }}</th>
-            <th class="active">{{ trans('admin.date') }}</th>
-            <th class="active">{{ trans('admin.points') }}</th>
-            <th class="active">{{ trans('admin.goal') }}</th>
-            <th class="active">{{ trans('admin.actions') }}</th>
+            <th>{{ trans('admin.user') }}</th>
+            <th>{{ trans('admin.group') }}</th>
+            <th>{{ trans('admin.shift') }}</th>
+            <th>{{ trans('admin.date') }}</th>
+            <th>{{ trans('admin.points') }}</th>
+            <th>{{ trans('admin.goal') }}</th>
+            <th>{{ trans('admin.actions') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -20,6 +20,9 @@
                 <td>{{ $point->points }}</td>
                 <td>{{ $point->goal }}</td>
                 <td>
+                    <a href="{{ route('points.edit', $point) }}" class="btn btn-success rounded-pill btn-sm me-2">
+                        <i class="bi-pencil"></i>
+                    </a>
                     <form action="{{ route('points.destroy', $point) }}" method="POST" class="d-inline-block">
                         @csrf
                         @method('DELETE')
@@ -36,3 +39,33 @@
         @endforelse
     </tbody>
 </table>
+<script>
+            $(document).ready(function() {
+            try {
+                $('#recordsTable').DataTable({
+                    // Opciones de DataTables
+                    "language": {
+                        "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+                    },
+                    "drawCallback": function(settings) {
+                        setupActionDelete();
+                    }
+                });
+            } catch (error) {
+                console.error('Error al inicializar DataTables:', error);
+            }
+        });
+
+        function filterRecords(date) {
+            $.ajax({
+                url: "{{ route('points.index') }}",
+                data: {
+                    date: date
+                },
+                success: function(response) {
+                    // Actualizar la sección de registros en la vista con la respuesta del servidor
+                    $('.records-section').html(response);
+                }
+            });
+        }
+</script>

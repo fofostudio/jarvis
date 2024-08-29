@@ -3,91 +3,61 @@ const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 (function ($) {
     "use strict";
 
-    const lightbox = GLightbox({
-        touchNavigation: true,
+    // Inicializaciones
+    function initComponents() {
+        initGLightbox();
+        initTooltips();
+        initSelect2();
+        initNumberInputs();
+    }
 
-        loop: false,
 
-        closeEffect: "fade",
-    });
+    if (typeof window.appTranslations === "undefined") {
+        console.error(
+            "Las traducciones no están definidas. Asegúrate de que el script de traducciones se carga antes que admin-functions.js"
+        );
+        return;
+    }
+    function initGLightbox() {
+        if (typeof GLightbox !== "undefined") {
+            const lightbox = GLightbox({
+                touchNavigation: true,
+                loop: false,
+                closeEffect: "fade",
+            });
+        } else {
+            console.warn(
+                "GLightbox no está definido. Asegúrate de que el script se haya cargado correctamente."
+            );
+        }
+    }
 
-    $(function () {
+    function initTooltips() {
         $(".showTooltip").tooltip();
-    });
-
-    jQuery.fn.reset = function () {
-        $(this).each(function () {
-            this.reset();
-        });
-    };
-
-    function scrollElement(element) {
-        var offset = $(element).offset().top;
-
-        $("html, body").animate({ scrollTop: offset }, 500);
     }
 
-    function escapeHtml(unsafe) {
-        return unsafe
-
-            .replace(/&/g, "&amp;")
-
-            .replace(/</g, "&lt;")
-
-            .replace(/>/g, "&gt;")
-
-            .replace(/"/g, "&quot;")
-
-            .replace(/'/g, "&#039;");
+    function initSelect2() {
+        if ($.fn.select2) {
+            $(".select").select2({
+                theme: "bootstrap-5",
+            });
+        }
     }
 
-    //<-------- * TRIM * ----------->
-
-    function trim(string) {
-        return string.replace(/^\s+/g, "").replace(/\s+$/g, "");
-    }
-
-    $(".toggle-menu, .overlay").on("click", function () {
-        $(".overlay").toggleClass("open");
-    });
-
-    $(".isNumber").keypress(function (event) {
-        return isNumber(event, this);
-    });
-
-    function isNumber(evt, element) {
-        var charCode = evt.which ? evt.which : event.keyCode;
-
-        if (
-            (charCode != 46 || $(element).val().indexOf(".") != -1) &&
-            (charCode < 48 || charCode > 57)
-        )
-            return false;
-
-        return true;
-    }
-
-    $(document).ready(function () {
+    function initNumberInputs() {
         $(".onlyNumber").keydown(function (e) {
-            // Allow: backspace, delete, tab, escape, enter and .
-
+            // Permitir: backspace, delete, tab, escape, enter y .
             if (
-                $.inArray(e.keyCode, [46, 8, 9, 27, 13]) !== -1 ||
-                // Allow: Ctrl+A, Command+A
-
+                $.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Permitir: Ctrl+A, Command+A
                 (e.keyCode === 65 &&
                     (e.ctrlKey === true || e.metaKey === true)) ||
-                // Allow: home, end, left, right, down, up
-
+                // Permitir: home, end, left, right, down, up
                 (e.keyCode >= 35 && e.keyCode <= 40)
             ) {
-                // let it happen, don't do anything
-
                 return;
             }
-
-            // Ensure that it is a number and stop the keypress
-
+            // Asegurar que sea un número y detener el keypress
             if (
                 (e.shiftKey || e.keyCode < 48 || e.keyCode > 57) &&
                 (e.keyCode < 96 || e.keyCode > 105)
@@ -95,422 +65,77 @@ const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 e.preventDefault();
             }
         });
-    });
+    }
 
-    $('.select option[value="' + timezone + '"]').attr("selected", "selected");
+    function setupActionDelete() {
+        $(document).on("click", ".actionDelete", function (e) {
+            e.preventDefault();
+            var element = $(this);
+            var form = element.closest("form");
+            element.blur();
 
-    $(".select").select2({
-        theme: "bootstrap-5",
-    });
-
-    // Delete Post, Categories, Members, Languages, etc...
-
-    $(".actionDelete").on("click", function (e) {
-        e.preventDefault();
-
-        var element = $(this);
-
-        var form = $(element).parents("form");
-
-        element.blur();
-
-        swal(
-            {
-                title: delete_confirm,
-
-                type: "warning",
-
-                showLoaderOnConfirm: true,
-
+            Swal.fire({
+                title: window.appTranslations.delete_confirm,
+                icon: "warning",
                 showCancelButton: true,
-
                 confirmButtonColor: "#DD6B55",
-
-                confirmButtonText: yes_confirm,
-
-                cancelButtonText: cancel_confirm,
-
-                closeOnConfirm: false,
-            },
-
-            function (isConfirm) {
-                if (isConfirm) {
+                confirmButtonText: window.appTranslations.yes_confirm,
+                cancelButtonText: window.appTranslations.cancel_confirm,
+            }).then((result) => {
+                if (result.isConfirmed) {
                     form.submit();
                 }
-            },
-        );
-    });
+            });
+        });
+    }
 
-    $(".filter").on("change", function () {
-        window.location.href = $(this).val();
-    });
+    function setupFilter() {
+        $(".filter").on("change", function () {
+            window.location.href = $(this).val();
+        });
+    }
 
-    // Email Driver
+    function setupLoginAsUser() {
+        $(".loginAsUser").on("click", function (e) {
+            e.preventDefault();
+            var element = $(this);
+            var form = element.parents("form");
+            element.blur();
 
-    $("#emailDriver").on("change", function () {
-        if ($(this).val() == "mailgun") {
-            $("#mailgun").slideDown();
-        } else {
-            $("#mailgun").slideUp();
+            Swal.fire({
+                title: window.appTranslations.delete_confirm,
+                text: window.appTranslations.login_as_user_warning,
+                icon: "warning",
+                showLoaderOnConfirm: true,
+                showCancelButton: true,
+                confirmButtonColor: "#52bb03",
+                confirmButtonText: window.appTranslations.yes,
+                cancelButtonText: window.appTranslations.cancel_confirm,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    }
+
+    function setupTestSMTP() {
+        $("#testSMTP").on("click", function (e) {
+            e.preventDefault();
+            $("#formTestSMTP").submit();
+        });
+    }
+
+    // Inicialización principal
+    $(document).ready(function () {
+        try {
+            initComponents();
+            setupActionDelete();
+            setupFilter();
+            setupLoginAsUser();
+            setupTestSMTP();
+        } catch (error) {
+            console.error("Se produjo un error en admin-functions.js:", error);
         }
-
-        if ($(this).val() == "ses") {
-            $("#ses").slideDown();
-        } else {
-            $("#ses").slideUp();
-        }
-    });
-
-    // Refund
-
-    $(".actionRefund").on("click", function (e) {
-        e.preventDefault();
-
-        var element = $(this);
-
-        var form = $(element).parents("form");
-
-        element.blur();
-
-        swal(
-            {
-                title: delete_confirm,
-
-                type: "error",
-
-                showLoaderOnConfirm: true,
-
-                showCancelButton: true,
-
-                confirmButtonColor: "#DD6B55",
-
-                confirmButtonText: yes_confirm_refund,
-
-                cancelButtonText: cancel_confirm,
-
-                closeOnConfirm: false,
-            },
-
-            function (isConfirm) {
-                if (isConfirm) {
-                    form.submit();
-                }
-            },
-        );
-    });
-
-    $(document).on("change", "#sort", function () {
-        $("#formSort").submit();
-    });
-
-    // Approve post
-
-    $(".actionApprovePost").on("click", function (e) {
-        e.preventDefault();
-
-        var element = $(this);
-
-        var url = element.attr("href");
-
-        var form = $(element).parents("form");
-
-        element.blur();
-
-        swal(
-            {
-                title: delete_confirm,
-
-                type: "warning",
-
-                text: approve_confirm_post,
-
-                showLoaderOnConfirm: true,
-
-                showCancelButton: true,
-
-                confirmButtonColor: "#52bb03",
-
-                confirmButtonText: yes_confirm_approve_post,
-
-                cancelButtonText: cancel_confirm,
-
-                closeOnConfirm: false,
-            },
-
-            function (isConfirm) {
-                if (isConfirm) {
-                    form.submit();
-                }
-            },
-        );
-    });
-
-    // Delete post
-
-    $(".actionDeletePost").on("click", function (e) {
-        e.preventDefault();
-
-        var element = $(this);
-
-        var form = $(element).parents("form");
-
-        element.blur();
-
-        swal(
-            {
-                title: delete_confirm,
-
-                type: "warning",
-
-                text: delete_confirm_post,
-
-                showLoaderOnConfirm: true,
-
-                showCancelButton: true,
-
-                confirmButtonColor: "#DD6B55",
-
-                confirmButtonText: yes_confirm_reject_post,
-
-                cancelButtonText: cancel_confirm,
-
-                closeOnConfirm: false,
-            },
-
-            function (isConfirm) {
-                if (isConfirm) {
-                    form.submit();
-                }
-            },
-        );
-    });
-
-    // Cancel Payment
-
-    $(".cancel_payment").on("click", function (e) {
-        e.preventDefault();
-
-        var element = $(this);
-
-        var form = $(element).parents("form");
-
-        element.blur();
-
-        swal(
-            {
-                title: delete_confirm,
-
-                type: "warning",
-
-                text: cancel_payment,
-
-                showLoaderOnConfirm: true,
-
-                showCancelButton: true,
-
-                confirmButtonColor: "#DD6B55",
-
-                confirmButtonText: yes_cancel_payment,
-
-                cancelButtonText: cancel_confirm,
-
-                closeOnConfirm: false,
-            },
-
-            function (isConfirm) {
-                if (isConfirm) {
-                    form.submit();
-                }
-            },
-        );
-    });
-
-    // Approve verification request
-
-    $(".actionApprove").on("click", function (e) {
-        e.preventDefault();
-
-        var element = $(this);
-
-        var url = element.attr("href");
-
-        var form = $(element).parents("form");
-
-        element.blur();
-
-        swal(
-            {
-                title: delete_confirm,
-
-                type: "warning",
-
-                text: approve_confirm_verification,
-
-                showLoaderOnConfirm: true,
-
-                showCancelButton: true,
-
-                confirmButtonColor: "#52bb03",
-
-                confirmButtonText: yes_confirm_approve_verification,
-
-                cancelButtonText: cancel_confirm,
-
-                closeOnConfirm: false,
-            },
-
-            function (isConfirm) {
-                if (isConfirm) {
-                    form.submit();
-                }
-            },
-        );
-    });
-
-    // Delete verification request
-
-    $(".actionDeleteVerification").on("click", function (e) {
-        e.preventDefault();
-
-        var element = $(this);
-
-        var url = element.attr("href");
-
-        var form = $(element).parents("form");
-
-        element.blur();
-
-        swal(
-            {
-                title: delete_confirm,
-
-                type: "warning",
-
-                text: delete_confirm_verification,
-
-                showLoaderOnConfirm: true,
-
-                showCancelButton: true,
-
-                confirmButtonColor: "#DD6B55",
-
-                confirmButtonText: yes_confirm_verification,
-
-                cancelButtonText: cancel_confirm,
-
-                closeOnConfirm: false,
-            },
-
-            function (isConfirm) {
-                if (isConfirm) {
-                    form.submit();
-                }
-            },
-        );
-    });
-
-    // login as User...
-
-    $(".loginAsUser").on("click", function (e) {
-        e.preventDefault();
-
-        var element = $(this);
-
-        var form = $(element).parents("form");
-
-        element.blur();
-
-        swal(
-            {
-                title: delete_confirm,
-
-                text: login_as_user_warning,
-
-                type: "warning",
-
-                showLoaderOnConfirm: true,
-
-                showCancelButton: true,
-
-                confirmButtonColor: "#52bb03",
-
-                confirmButtonText: yes,
-
-                cancelButtonText: cancel_confirm,
-
-                closeOnConfirm: false,
-            },
-
-            function (isConfirm) {
-                if (isConfirm) {
-                    form.submit();
-                }
-            },
-        );
-    });
-
-    // Delete Blog
-
-    $(".actionDeleteBlog").on("click", function (e) {
-        e.preventDefault();
-
-        var element = $(this);
-
-        var form = $(element).parents("form");
-
-        element.blur();
-
-        swal(
-            {
-                title: delete_confirm,
-
-                type: "warning",
-
-                showLoaderOnConfirm: true,
-
-                showCancelButton: true,
-
-                confirmButtonColor: "#DD6B55",
-
-                confirmButtonText: yes_confirm,
-
-                cancelButtonText: cancel_confirm,
-
-                closeOnConfirm: false,
-            },
-
-            function (isConfirm) {
-                if (isConfirm) {
-                    form.submit();
-                }
-            },
-        );
-    });
-
-    $("#testSMTP").on("click", function (e) {
-        e.preventDefault();
-
-        $("#formTestSMTP").submit();
-    });
-
-    // trigger click select photo add bg stories
-
-    $(document).on("click", "#btnFileAddBg", function () {
-        var _this = $(this);
-
-        $("#fileAddBg").trigger("click");
-
-        _this.blur();
-    });
-
-    $("#fileAddBg").on("change", function (e) {
-        e.preventDefault();
-
-        $("#btnFileAddBg")
-            .find("i")
-            .removeClass("bi-plus-lg")
-            .addClass("spinner-border spinner-border-sm align-middle me-1");
-
-        $("#formAddBg").submit();
     });
 })(jQuery);

@@ -22,10 +22,9 @@ class AuditController extends Controller
         $operators = User::where('role', 'operator')->get();
         $platforms = Platform::all();
         $groups = Group::all();
-        $damas = Girl::all();
-        return view('audits.create', compact('operators','platforms','groups','damas'));
-    }
 
+        return view('audits.create', compact('operators', 'platforms', 'groups'));
+    }
     public function store(Request $request)
     {
         $validatedData = $request->validate([

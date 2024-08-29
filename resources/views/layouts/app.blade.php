@@ -6,18 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" href="#" />
-    @yield('javascriptheader')
-
 
     <title>{{ __('admin.app_tittle') }}</title>
 
-
-    <!-- Fonts -->
-
+    <!-- Preconnect para mejora de rendimiento -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+    <!-- Fuentes -->
+    <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet">
+
+    <!-- CSS de bibliotecas externas -->
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+
+    <!-- CSS personalizado -->
     @include('includes.css_admin')
+
     <style>
         :root {
             --color-default: #000000;
@@ -68,6 +78,9 @@
     </style>
 
     @yield('css')
+    @stack('styles')
+
+    @yield('javascriptheader')
 </head>
 
 <body>
@@ -91,7 +104,8 @@
             <div class="offcanvas offcanvas-start sidebar bg-dark text-white" tabindex="-1" id="sidebar-nav"
                 data-bs-keyboard="false" data-bs-backdrop="false">
                 <div class="offcanvas-header">
-                    <h5 class="offcanvas-title"><img src="{{ asset('images/logojarvis.svg') }}" class="logo-jarvis" alt="Logo Jarvis">
+                    <h5 class="offcanvas-title"><img src="{{ asset('images/logojarvis.svg') }}" class="logo-jarvis"
+                            alt="Logo Jarvis">
                     </h5>
                     <button type="button" class="btn-close btn-close-custom text-white toggle-menu d-lg-none"
                         data-bs-dismiss="offcanvas" aria-label="Close">
@@ -164,20 +178,39 @@
             </footer>
         </main>
     @endif
-
-    <!-- Scripts -->
-    <script src="{{ asset('/js/core.min.js') }}"></script>
-    <script src="{{ asset('/admin/bootstrap.min.js') }}"></script>
+    <script>
+        // Definir variables globales para textos de confirmación
+        window.appTranslations = {
+            delete_confirm: "{{ __('admin.delete_confirm') }}",
+            yes_confirm: "{{ __('admin.yes_confirm') }}",
+            cancel_confirm: "{{ __('admin.cancel_confirm') }}",
+            login_as_user_warning: "{{ __('admin.login_as_user_warning') }}",
+            yes: "{{ __('admin.yes') }}",
+            // Añade aquí cualquier otra variable de texto que necesites
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="{{ asset('/js/ckeditor/ckeditor.js') }}"></script>
-    <script src="{{ asset('/js/select2/select2.full.min.js') }}"></script>
     <script src="{{ asset('/admin/admin-functions.js') }}"></script>
-    @yield('javascript')
 
+    @yield('javascript')
+    @stack('scripts')
     @if (session('success_update'))
         <script type="text/javascript">
-            swal({
+            Swal.fire({
                 title: "{{ session('success_update') }}",
-                type: "success",
+                icon: "success",
                 confirmButtonText: "{{ trans('users.ok') }}"
             });
         </script>
@@ -185,10 +218,10 @@
 
     @if (session('unauthorized'))
         <script type="text/javascript">
-            swal({
+            Swal.fire({
                 title: "{{ trans('general.error_oops') }}",
                 text: "{{ session('unauthorized') }}",
-                type: "error",
+                icon: "error",
                 confirmButtonText: "{{ trans('users.ok') }}"
             });
         </script>

@@ -13,8 +13,7 @@ class Audit extends Model
         'review_date',
         'platform',
         'group',
-        'dama_name',
-        'dama_id',
+        'girl_id',
         'client_name',
         'client_id',
         'client_status',
@@ -60,5 +59,9 @@ class Audit extends Model
     public function operator()
     {
         return $this->belongsTo(User::class, 'operator_id');
+    }
+    public function girl()
+    {
+        return $this->belongsTo(Girl::class);
     }
 }
