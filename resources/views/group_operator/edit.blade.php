@@ -11,7 +11,7 @@
         <div class="form-group">
             <label for="shift">{{ __('admin.shift') }}</label>
             <select name="shift" id="shift" class="form-control" required>
-                @foreach(['morning', 'afternoon', 'night'] as $shift)
+                @foreach(['morning', 'afternoon', 'night', 'complete'] as $shift)
                     <option value="{{ $shift }}" {{ old('shift', $assignment->shift) == $shift ? 'selected' : '' }}>
                         {{ __('admin.shift_' . $shift) }}
                     </option>

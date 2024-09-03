@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Group;
+use App\Models\GroupCategory;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -10,19 +11,28 @@ class GroupController extends Controller
 {
     public function index()
     {
-        $groups = Group::paginate(30);
-        return view('groups.index', compact('groups'));
+        $categories = GroupCategory::whereIn('name', ['Oro', 'Plata', 'Bronce'])
+            ->orderByRaw("FIELD(name, 'Oro', 'Plata', 'Bronce')")
+            ->with(['groups' => function ($query) {
+                $query->orderBy('name');
+            }])
+            ->get();
+
+
+        return view('groups.index', compact('categories'));
     }
 
     public function create()
     {
-        return view('groups.create');
+        $categories = GroupCategory::all();
+        return view('groups.create', compact('categories'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'group_category_id' => 'required|exists:group_categories,id',
         ]);
 
         Group::create($validated);
@@ -37,19 +47,22 @@ class GroupController extends Controller
 
     public function edit(Group $group)
     {
-        return view('groups.edit', compact('group'));
+        $categories = GroupCategory::all();
+        return view('groups.edit', compact('group', 'categories'));
     }
 
     public function update(Request $request, Group $group)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'group_category_id' => 'required|exists:group_categories,id',
         ]);
 
         $group->update($validated);
 
         return redirect()->route('groups.index')->with('success', 'Group updated successfully.');
     }
+
     public function LoadExt(Request $request)
     {
         $user = $request->user();

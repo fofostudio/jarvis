@@ -28,11 +28,11 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h3 class="h4 mb-0 text-gray-800">{{ $assignedGroup->name ?? 'N/A' }}</h3>
-                                <p class="mb-0 text-muted">Jornada: @if($assignedShift == 'Morning')
+                                <p class="mb-0 text-muted">Jornada: @if($assignedShift == 'morning')
                                     Mañana
-                                @elseif($assignedShift == 'Afternoon')
+                                @elseif($assignedShift == 'afternoon')
                                     Tarde
-                                @elseif($assignedShift == 'Night')
+                                @elseif($assignedShift == 'night')
                                     Noche
                                 @else
                                     {{ $assignedShift }}

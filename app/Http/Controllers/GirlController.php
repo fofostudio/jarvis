@@ -44,7 +44,7 @@ class GirlController extends Controller
             $query->where('group_id', $request->input('group'));
         }
 
-        $girls = $query->paginate(30);
+        $girls = $query->get();
 
         $groups = Group::withCount('girls')->get();
         $platforms = Platform::withCount('girls')->get();

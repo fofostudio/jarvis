@@ -71,8 +71,6 @@ class OperativeReportController extends Controller
                 'gentleman_code' => 'required_if:report_type,conversational|array',
                 'lady_code' => 'required_if:report_type,conversational|array',
                 'conversation_summary' => 'required_if:report_type,conversational|array',
-                'images' => 'nullable|array',
-                'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:20480',
             ]);
 
             DB::beginTransaction();

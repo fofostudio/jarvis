@@ -17,7 +17,7 @@
         </div>
     @endif
 
-    @foreach(['morning', 'afternoon', 'night'] as $shift)
+    @foreach(['morning', 'afternoon', 'night', 'complete'] as $shift)
         <div class="card mb-4">
             <div class="card-header">
                 <h4>{{ __('admin.shift_' . $shift) }}</h4>

@@ -9,7 +9,7 @@ class Group extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'group_category_id'];
 
     public function girls()
     {
@@ -20,17 +20,16 @@ class Group extends Model
         return $this->hasMany(Point::class);
     }
 
-   public function operators()
+    public function operators()
     {
         return $this->belongsToMany(User::class, 'group_operator')
-                    ->withPivot('shift')
-                    ->withTimestamps();
-
+            ->withPivot('shift')
+            ->withTimestamps();
     }
     public function workPlans()
-{
-    return $this->hasMany(WorkPlan::class);
-}
+    {
+        return $this->hasMany(WorkPlan::class);
+    }
     public function platforms()
     {
         return $this->belongsToMany(Platform::class, 'girls', 'group_id', 'platform_id')->distinct();
@@ -38,5 +37,9 @@ class Group extends Model
     public function groupOperators()
     {
         return $this->hasMany(GroupOperator::class);
+    }
+    public function category()
+    {
+        return $this->belongsTo(GroupCategory::class, 'group_category_id');
     }
 }

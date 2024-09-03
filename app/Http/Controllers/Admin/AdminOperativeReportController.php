@@ -9,31 +9,33 @@ use Illuminate\Http\Request;
 class AdminOperativeReportController extends Controller
 {
     public function index()
-{
-    $pendingCount = OperativeReport::whereNull('is_approved')->count();
-    $rejectedCount = OperativeReport::where('is_approved', false)->count();
-    $approvedCount = OperativeReport::where('is_approved', true)->count();
-    $totalCount = OperativeReport::count();
+    {
+        $pendingReports = OperativeReport::with(['user.groups', 'group'])
+            ->whereNull('is_approved')
+            ->orderBy('created_at', 'desc')
+            ->take(50)
+            ->get();
 
-    $pendingReports = OperativeReport::with(['user', 'group'])
-        ->whereNull('is_approved')
-        ->orderBy('report_date', 'desc')
-        ->get();
+        $reviewedReports = OperativeReport::with(['user', 'group'])
+            ->whereNotNull('is_approved')
+            ->orderBy('created_at', 'desc')
+            ->take(100)
+            ->get();
 
-    $reviewedReports = OperativeReport::with(['user', 'group'])
-        ->whereNotNull('is_approved')
-        ->orderBy('report_date', 'desc')
-        ->paginate(15);
+        $pendingCount = OperativeReport::whereNull('is_approved')->count();
+        $rejectedCount = OperativeReport::where('is_approved', false)->count();
+        $approvedCount = OperativeReport::where('is_approved', true)->count();
+        $totalCount = OperativeReport::count();
 
-    return view('admin.operative-reports.index', compact(
-        'pendingCount',
-        'rejectedCount',
-        'approvedCount',
-        'totalCount',
-        'pendingReports',
-        'reviewedReports'
-    ));
-}
+        return view('admin.operative-reports.index', compact(
+            'pendingReports',
+            'reviewedReports',
+            'pendingCount',
+            'rejectedCount',
+            'approvedCount',
+            'totalCount'
+        ));
+    }
 
     public function show(OperativeReport $report)
     {

@@ -23,11 +23,14 @@ class DashboardController extends Controller
         $user = Auth::user();
         $role = $user->role;
 
-        if ($role == 'super_admin' || $role == 'admin') {
+        if ($role == 'super_admin' || $role == 'admin' || $role == 'coordinador') {
             return $this->superAdminDashboard();
         } elseif ($role == 'operator') {
             return $this->operatorDashboard($user);
+        }elseif ($role == 'coperative') {
+            return $this->coperativeDashboard($user);
         }
+
 
         // Fallback for unauthorized access
         return redirect()->route('home')->with('error', 'Unauthorized access');
@@ -35,12 +38,12 @@ class DashboardController extends Controller
 
     public function superAdminDashboard()
     {
-        $activeOperators = User::where('role', 'operator')
+        $activeOperators = User::whereIn('role', ['operator', 'admin'])
             ->whereHas('sessionLogs', function ($query) {
                 $query->whereDate('date', Carbon::today());
             })->count();
 
-        $activeOperatorsDetails = User::where('role', 'operator')
+        $activeOperatorsDetails = User::whereIn('role', ['operator', 'admin'])
             ->whereHas('sessionLogs', function ($query) {
                 $query->whereDate('date', Carbon::today());
             })
@@ -56,11 +59,14 @@ class DashboardController extends Controller
                 $breakTakenToday = $operator->breakLogs->isNotEmpty();
 
                 $status = 'Laborando';
-                if (!$latestSessionLog || $latestSessionLog->end_time) {
+                if (!$latestSessionLog) {
+                    $status = 'Inactivo';
+                } elseif ($latestSessionLog->last_logout) {
                     $status = 'Inactivo';
                 } elseif ($currentBreak) {
                     $status = $currentBreak->overtime > 0 ? 'Excede Break' : 'Activo Break';
                 }
+
 
                 return [
                     'id_operador' => $operator->id,
@@ -307,6 +313,55 @@ class DashboardController extends Controller
         $isOnBreak = $user->is_on_break ?? false;
 
         // Obtener la jornada asignada
+        $assignedShift = $groupOperator ? $groupOperator->shift : 'No asignado';
+
+        return view('dashboard.operator', compact(
+            'assignedGroup',
+            'assignedGirls',
+            'totalPoints',
+            'totalGoal',
+            'chartData',
+            'currentShift',
+            'lastLogins',
+            'groupOperator',
+            'isOnBreak',
+            'assignedShift'
+        ));
+    }
+
+    private function coperativeDashboard($user)
+    {
+        $currentShift = $this->getCurrentShift();
+        $groupOperator = GroupOperator::where('user_id', $user->id)
+            ->first();
+
+        $assignedGroup = $groupOperator ? $groupOperator->group : null;
+        $assignedGirls = $assignedGroup ? $assignedGroup->girls : collect();
+
+        $operatorPoints = Point::where('user_id', $user->id)
+            ->where('date', '>=', Carbon::now()->subDays(30))
+            ->orderBy('date')
+            ->get();
+
+        $totalPoints = $operatorPoints->sum('points');
+        $totalGoal = $operatorPoints->sum('goal');
+
+        $chartData = $operatorPoints->groupBy('date')->map(function ($items) {
+            return [
+                'date' => $items->first()->date,
+                'points' => $items->sum('points'),
+                'goal' => $items->sum('goal'),
+            ];
+        })->values();
+
+        $lastLogins = SessionLog::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        $isOnBreak = $user->is_on_break ?? false;
+
+        // Obtener la jornada asignada
         $assignedShift = $currentShift ? ucfirst($currentShift) : 'No asignado';
 
         return view('dashboard.operator', compact(
@@ -322,4 +377,5 @@ class DashboardController extends Controller
             'assignedShift'
         ));
     }
+
 }

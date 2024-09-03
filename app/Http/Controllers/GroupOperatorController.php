@@ -14,7 +14,7 @@ class GroupOperatorController extends Controller
     {
         $assignment = GroupOperator::findOrFail($id);
         $groups = Group::all();
-        $operators = User::where('role', 'operator')->get();
+        $operators = User::all();
 
         return view('group_operator.edit', compact('assignment', 'groups', 'operators'));
     }
@@ -26,7 +26,7 @@ class GroupOperatorController extends Controller
         $request->validate([
             'group_id' => 'required|exists:groups,id',
             'user_id' => 'required|exists:users,id',
-            'shift' => 'required|in:morning,afternoon,night',
+            'shift' => 'required|in:morning,afternoon,night,complete',
         ]);
 
         DB::beginTransaction();
@@ -65,7 +65,7 @@ class GroupOperatorController extends Controller
     }
     public function create()
     {
-        $shifts = ['morning', 'afternoon', 'night'];
+        $shifts = ['morning', 'afternoon', 'night', 'complete'];
         $selectedShift = request('shift');
         $groups = collect();
         $operators = collect();
@@ -82,7 +82,7 @@ class GroupOperatorController extends Controller
         $assignedOperatorIds = GroupOperator::pluck('user_id');
 
         // Obtener operadores disponibles que no tienen ningún grupo asignado
-        $operators = User::where('role', 'operator')
+        $operators = User::whereIn('role', ['operator','admin'])
                          ->whereNotIn('id', $assignedOperatorIds)
                          ->get();
     }
@@ -94,7 +94,7 @@ class GroupOperatorController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'shift' => 'required|in:morning,afternoon,night',
+            'shift' => 'required|in:morning,afternoon,night,complete',
             'group_id' => 'required|exists:groups,id',
             'user_id' => 'required|exists:users,id',
         ]);

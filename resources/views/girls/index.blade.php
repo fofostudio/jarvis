@@ -142,7 +142,7 @@
                 <div class="card shadow-custom border-0">
                     <div class="card-body p-lg-4">
                         <div class="table-responsive p-0">
-                            <table class="table table-hover">
+                            <table class="table table-hover" id="girls-table">
                                 <thead>
                                     <tr>
                                         <th class="active">{{ trans('admin.name') }}</th>
@@ -217,4 +217,21 @@
         });
     });
 </script>
+@endsection
+@section('javascript')
+<script>
+    $(document).ready(function() {
+        $('#girls-table').DataTable({
+
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.11.3/i18n/es_es.json"
+            },
+            "lengthMenu": [[-1], ["Todos"]],
+            "pageLength": -1,  // Configura la tabla para mostrar todos los registros por defecto
+            // Agrega las opciones de filtro de registros
+            "order": [[0, "asc"]] // Ordena la tabla por la primera columna por defecto (puedes cambiar el índice según tu necesidad)
+        });
+    });
+</script>
+
 @endsection

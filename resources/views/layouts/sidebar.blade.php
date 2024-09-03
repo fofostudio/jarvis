@@ -1,4 +1,4 @@
-@if (auth()->user()->role == 'super_admin' || auth()->user()->role == 'admin')
+@if (auth()->user()->role == 'super_admin' || auth()->user()->role == 'admin'|| auth()->user()->role == 'coordinador' )
 
 <li class="nav-item">
     <a href="{{ route('dashboard') }}" class="nav-link text-truncate @if (request()->routeIs('dashboard')) active @endif">
@@ -12,14 +12,16 @@
 </li>
 <li class="nav-item">
     <a href="{{ route('admin.session_logs.index') }}" class="nav-link text-truncate @if (request()->routeIs('admin.session_logs.*')) active @endif">
-        <i class="bi-clock-history me-2"></i> {{ __('admin.session_logs') }}
+        <i class="bi-clock-history me-2"></i> {{ __('admin.asistencia_registro') }}
     </a>
 </li>
 <li class="nav-item">
-    <a href="{{ route('platforms.index') }}" class="nav-link text-truncate @if (request()->routeIs('platforms.*')) active @endif">
-        <i class="bi-display me-2"></i> {{ __('admin.platforms') }}
+    <a href="{{ route('admin.gestion-breaks') }}" class="nav-link text-truncate @if (request()->routeIs('admin.gestion-breaks')) active @endif">
+        <i class="bi-clock-history me-2"></i> {{ __('admin.registro_break') }}
     </a>
 </li>
+
+
 <li class="nav-item">
     <a href="{{ route('work_plans.index') }}" class="nav-link text-truncate @if (request()->routeIs('work_plans.*')) active @endif">
         <i class="bi-calendar-week me-2"></i> {{ __('admin.work_plans') }}
@@ -38,6 +40,11 @@
 <li class="nav-item">
     <a href="{{ route('groups.index') }}" class="nav-link text-truncate @if (request()->routeIs('groups.*')) active @endif">
         <i class="bi-people me-2"></i> {{ __('admin.groups') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a href="{{ route('groups.index') }}" class="nav-link text-truncate @if (request()->routeIs('categories.*')) active @endif">
+        <i class="bi-people me-2"></i> {{ __('admin.categories') }}
     </a>
 </li>
 <li class="nav-item">
@@ -63,6 +70,11 @@
 <li class="nav-item">
     <a href="{{ route('fooditems.index') }}" class="nav-link text-truncate @if (request()->routeIs('FoodItems.*')) active @endif">
         <i class="bi-egg-fried me-2"></i> {{ __('admin.FoodItems') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a href="{{ route('platforms.index') }}" class="nav-link text-truncate @if (request()->routeIs('platforms.*')) active @endif">
+        <i class="bi-display me-2"></i> {{ __('admin.platforms') }}
     </a>
 </li>
 <li class="nav-item">
@@ -186,18 +198,24 @@
     </li>
 @endif
 @if (auth()->user()->role == 'coperative')
+
 <li class="nav-item">
-    <a href="{{ route('foodAdmin.index') }}" class="nav-link text-truncate @if (request()->routeIs('foodAdmin.*')) active @endif">
-        <i class="bi-person-workspace me-2"></i> {{ __('operator.foodAdmin') }}
+    <a href="{{ route('dashboard') }}" class="nav-link text-truncate @if (request()->routeIs('dashboard')) active @endif">
+        <i class="bi-speedometer2 me-2"></i> {{ __('admin.dashboard') }}
     </a>
 </li>
 <li class="nav-item">
-    <a href="{{ route('foodProducts.index') }}" class="nav-link text-truncate @if (request()->routeIs('foodProducts.*')) active @endif">
-        <i class="bi-basket2 me-2"></i> {{ __('operator.foodProducts') }}
+    <a href="{{ route('foodAdmin.index') }}" class="nav-link text-truncate @if (request()->routeIs('foodAdmin.index')) active @endif">
+        <i class="bi-person-workspace me-2"></i> {{ __('operator.foodProducts') }}
     </a>
 </li>
 <li class="nav-item">
-    <a href="{{ route('foodReports.index') }}" class="nav-link text-truncate @if (request()->routeIs('foodReports.*')) active @endif">
+    <a href="{{ route('foodAdmin.sales') }}" class="nav-link text-truncate @if (request()->routeIs('foodAdmin.sales')) active @endif">
+        <i class="bi-basket2 me-2"></i> {{ __('operator.Ventas') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a href="{{ route('foodAdmin.salesReport') }}" class="nav-link text-truncate @if (request()->routeIs('ffoodAdmin.salesReport')) active @endif">
         <i class="bi-file-earmark-bar-graph me-2"></i> {{ __('operator.foodReports') }}
     </a>
 </li>

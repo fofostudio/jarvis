@@ -212,6 +212,11 @@ return [
     'audit'=> 'Auditorias',
     'digital_content'=> 'Contenido Digital',
     'SAfoodProducts'=> 'Administrar Productos',
+    'previous_week'=> 'Semana Anterior',
+    'next_week'=> 'Semana Siguiente',
+    'asistencia_registro'=> 'Registro Asistencia',
+    'registro_break'=> 'Registros Break',
+
 
 
 
@@ -233,3 +238,4 @@ return [
 
 
 ];
+

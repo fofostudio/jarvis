@@ -4,9 +4,9 @@
     <h5 class="mb-4 fw-light">
         <a class="text-reset" href="{{ url('dashboard') }}">{{ __('admin.dashboard') }}</a>
         <i class="bi-chevron-right me-1 fs-6"></i>
-        <span class="text-muted">{{ __('admin.users') }} ({{ $users->count() }})</span>
-        <a href="{{ route('users.create') }}" class="btn btn-sm btn-dark float-lg-end mt-1 mt-lg-0">
-            <i class="bi-plus-lg"></i> {{ __('admin.create_user') }}
+        <span class="text-muted">{{ __('admin.user_admin') }} ({{ $users->count() }})</span>
+        <a href="{{ route('admin.users.create') }}" class="btn btn-sm btn-dark float-lg-end mt-1 mt-lg-0">
+            <i class="bi-plus-lg"></i> {{ __('admin.create_user_admin') }}
         </a>
     </h5>
 
@@ -31,7 +31,6 @@
                                         <th class="active">{{ trans('admin.name') }}</th>
                                         <th class="active">{{ trans('admin.email') }}</th>
                                         <th class="active">{{ trans('admin.role') }}</th>
-                                        <th class="active">{{ trans('admin.shift') }}</th>
                                         <th class="active">{{ trans('admin.actions') }}</th>
                                     </tr>
                                 </thead>
@@ -41,26 +40,6 @@
                                             <td>{{ $user->name }}</td>
                                             <td>{{ $user->email }}</td>
                                             <td>{{ $user->role }}</td>
-                                            <td>
-                                                @php
-                                                    $groupOperator = $groupOperators->firstWhere('user_id', $user->id);
-                                                @endphp
-
-                                                @if ($groupOperator)
-                                                    @if ($groupOperator->shift == 'Morning')
-                                                        Mañana
-                                                    @elseif($groupOperator->shift == 'Afternoon')
-                                                        Tarde
-                                                    @elseif($groupOperator->shift == 'Night')
-                                                        Noche
-                                                    @else
-                                                        {{ $groupOperator->shift }}
-                                                    @endif
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
-
                                             <td>
                                                 <a href="{{ route('users.edit', $user) }}"
                                                     class="btn btn-success rounded-pill btn-sm me-2">

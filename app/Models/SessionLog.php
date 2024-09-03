@@ -17,6 +17,7 @@ class SessionLog extends Model
         'login_count',
         'ip_address',
         'user_agent',
+        'status',
     ];
 
     protected $casts = [

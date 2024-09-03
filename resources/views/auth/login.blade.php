@@ -26,7 +26,7 @@
         <div class="flex items-center justify-end mt-4">
 
             <x-primary-button class="ms-3">
-                {{ __('Ingresar') }}
+                {{ __('Ingresar a Jarvis') }}
             </x-primary-button>
         </div>
     </form>

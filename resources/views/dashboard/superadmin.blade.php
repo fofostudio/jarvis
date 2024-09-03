@@ -1,6 +1,73 @@
 @extends('layouts.app')
 
 @section('content')
+    <style>
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #2196F3;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        #breakTimer {
+            width: 100px;
+            text-align: center;
+        }
+
+        #breakTimer.active {
+            background-color: #90EE90;
+        }
+
+        #breakTimer.warning {
+            background-color: #FFFFE0;
+        }
+
+        #breakTimer.danger {
+            background-color: #FFB6C1;
+        }
+
+        #breakTimer.finished {
+            background-color: #D3D3D3;
+        }
+    </style>
     <div class="container-fluid">
         <h1 class="h3 mb-4 text-gray-800">{{ __('admin.dashboard') }}</h1>
         <!-- Shift Selection -->
@@ -9,6 +76,16 @@
                 <div class="card shadow">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.shift_selection') }}</h6>
+
+                        <div class="d-flex align-items-center">
+                            <label class="toggle-switch mr-3">
+                                <input type="checkbox" id="breakToggle">
+                                <span class="slider"></span>
+                            </label>
+                            <input type="text" id="breakTimer" class="form-control text-center" value="00:30:00"
+                                readonly>
+                        </div>
+
                         <div class="dropdown no-arrow">
                             <form id="shiftForm" action="{{ route('dashboard') }}" method="GET">
                                 <select id="shiftSelector" name="shift" class="form-select" onchange="this.form.submit()">
@@ -42,14 +119,41 @@
             @foreach ($workingOperators as $operator)
                 @include('partials.operator_card', ['operator' => $operator, 'cardClass' => 'bg-success'])
             @endforeach
-
-            @foreach ($inactiveOperators as $operator)
-                @include('partials.operator_card', [
-                    'operator' => $operator,
-                    'cardClass' => 'bg-secondary',
-                ])
-            @endforeach
         </div>
+        <!-- Inactive Operators Accordion -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header" id="inactiveOperatorsHeader">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse"
+                                data-target="#inactiveOperatorsCollapse" aria-expanded="false"
+                                aria-controls="inactiveOperatorsCollapse">
+                                {{ __('admin.inactive_operators') }} (<span
+                                    class="inactive-count">{{ $inactiveOperators->count() }}</span>)
+                            </button>
+                        </h2>
+                    </div>
+
+                    <div id="inactiveOperatorsCollapse" class="collapse" aria-labelledby="inactiveOperatorsHeader">
+                        <div class="card-body">
+                            <div class="row">
+                                @foreach ($inactiveOperators as $operator)
+
+                                        @include('partials.operator_card', [
+                                            'operator' => $operator,
+                                            'cardClass' => 'bg-secondary',
+                                        ])
+
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
 
         <!-- Points Summary Cards -->
         <div class="row">
@@ -313,7 +417,85 @@
     </div>
 @endsection
 
+
+
 @section('javascript')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutButtons = document.querySelectorAll('.close-session');
+
+            logoutButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+
+                    Swal.fire({
+                        title: '¿Cerrar sesión?',
+                        text: '¿Estás seguro de que quieres cerrar la sesión de este operador?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, cerrar sesión',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Mostrar loading
+                            Swal.fire({
+                                title: 'Cerrando sesión...',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+
+                            // Realizar la petición AJAX para cerrar la sesión
+                            fetch('/admin/close-operator-session', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector(
+                                            'meta[name="csrf-token"]').getAttribute(
+                                            'content')
+                                    },
+                                    body: JSON.stringify({
+                                        user_id: userId
+                                    })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        Swal.fire({
+                                            title: '¡Éxito!',
+                                            text: 'Sesión cerrada correctamente',
+                                            icon: 'success',
+                                            timer: 1500
+                                        }).then(() => {
+                                            // Recargar la página
+                                            window.location.reload();
+                                        });
+                                    } else {
+                                        Swal.fire({
+                                            title: 'Error',
+                                            text: 'Error al cerrar la sesión: ' +
+                                                data.message,
+                                            icon: 'error'
+                                        });
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    Swal.fire({
+                                        title: 'Error',
+                                        text: 'Error al cerrar la sesión',
+                                        icon: 'error'
+                                    });
+                                });
+                        }
+                    });
+                });
+            });
+        });
+    </script>
     <script>
         function updateShift() {
             const now = new Date();
@@ -350,6 +532,12 @@
         $(document).ready(function() {
             const operatorCards = {};
 
+            initBreakToggle();
+            // Inicializar el acordeón
+
+
+
+
             function initializeOperatorCards() {
                 $('.operator-card').each(function() {
                     const $card = $(this);
@@ -366,7 +554,7 @@
                     const duration = moment.duration(startTime.add(30, 'minutes').diff(now));
 
                     if (duration.asSeconds() > 0) {
-                        $this.text('Tiempo restante: ' + moment.utc(duration.asMilliseconds()).format(
+                        $this.text('Restante: ' + moment.utc(duration.asMilliseconds()).format(
                             'mm:ss'));
                     } else {
                         const overtime = moment.duration(now.diff(startTime.add(30, 'minutes')));
@@ -481,6 +669,29 @@
             initGirlsPerPlatformChart();
             initBreakCountdown();
             initMonthlyTotalChart();
+            var inactiveOperatorsCollapse = document.getElementById('inactiveOperatorsCollapse');
+            var toggleButton = document.querySelector('#inactiveOperatorsHeader button');
+            var inactiveCount = document.querySelector('.inactive-count').textContent;
+
+            if (inactiveOperatorsCollapse && toggleButton) {
+                inactiveOperatorsCollapse.addEventListener('show.bs.collapse', function() {
+                    toggleButton.textContent = '{{ __('admin.hide_inactive_operators') }}';
+                });
+
+                inactiveOperatorsCollapse.addEventListener('hide.bs.collapse', function() {
+                    toggleButton.textContent = '{{ __('admin.inactive_operators') }} (' + inactiveCount +
+                        ')';
+                });
+
+                // Initialize the collapse
+                var bsCollapse = new bootstrap.Collapse(inactiveOperatorsCollapse, {
+                    toggle: false
+                });
+
+                toggleButton.addEventListener('click', function() {
+                    bsCollapse.toggle();
+                });
+            }
         });
 
         function initAdminDashboard() {
@@ -589,6 +800,153 @@
                     }
                 }
             });
+        }
+
+        function initBreakToggle() {
+            const breakToggle = document.getElementById('breakToggle');
+            const breakTimer = document.getElementById('breakTimer');
+            let timerInterval;
+            let breakStartTime;
+            let isBreakFinished = false;
+
+            function updateTimerDisplay(seconds) {
+                const isNegative = seconds < 0;
+                seconds = Math.abs(seconds);
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const remainingSeconds = seconds % 60;
+                breakTimer.value =
+                    `${isNegative ? '-' : ''}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+
+            function updateTimerStyle(seconds) {
+                breakTimer.classList.remove('active', 'warning', 'danger', 'finished');
+                if (seconds > 300) breakTimer.classList.add('active');
+                else if (seconds > 60) breakTimer.classList.add('warning');
+                else if (seconds > 0) breakTimer.classList.add('danger');
+                else breakTimer.classList.add('finished');
+            }
+
+            function startBreakTimer(startTime) {
+                clearInterval(timerInterval);
+                breakStartTime = new Date(startTime).getTime();
+                const endTime = breakStartTime + 30 * 60 * 1000;
+
+                function updateTimer() {
+                    const now = new Date().getTime();
+                    const distance = endTime - now;
+                    const seconds = Math.floor(distance / 1000);
+
+                    if (seconds <= 0 && !isBreakFinished) {
+                        isBreakFinished = true;
+                    }
+
+                    updateTimerDisplay(seconds);
+                    updateTimerStyle(seconds);
+
+                    if (isBreakFinished) {
+                        breakToggle.disabled = false;
+                    }
+                }
+
+                updateTimer();
+                timerInterval = setInterval(updateTimer, 1000);
+            }
+
+            function checkBreakStatus() {
+                fetch('/break-status')
+                    .then(response => response.json())
+                    .then(data => {
+                        breakToggle.checked = data.is_on_break;
+                        breakToggle.disabled = false;
+
+                        if (data.is_on_break) {
+                            startBreakTimer(data.start_time);
+                        } else {
+                            updateTimerDisplay(1800);
+                            updateTimerStyle(1800);
+                            isBreakFinished = false;
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            function logOvertime(overtime) {
+                fetch('/log-overtime', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            overtime: overtime
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to log overtime');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Overtime logged successfully:', data);
+                    })
+                    .catch(error => {
+                        console.error('Error logging overtime:', error);
+                    });
+            }
+
+            breakToggle.addEventListener('change', function() {
+                const action = this.checked ? 'start-break' : 'end-break';
+                fetch(`/${action}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                                'content'),
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Ya has tomado tu Break Hoy');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        if (action === 'start-break') {
+                            startBreakTimer(data.start_time);
+                        } else {
+                            clearInterval(timerInterval);
+                            const breakEndTime = new Date().getTime();
+                            const breakDuration = Math.floor((breakEndTime - breakStartTime) / 1000);
+                            const overtime = Math.max(0, breakDuration - 1800);
+                            updateTimerDisplay(breakDuration - 1800);
+                            updateTimerStyle(0);
+                            isBreakFinished = false;
+
+                            if (overtime > 0) {
+                                logOvertime(overtime);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        this.checked = !this.checked; // Revert the toggle
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: `Error: ${error.message}`,
+                        });
+                    });
+            });
+
+            setInterval(checkBreakStatus, 60000);
+            checkBreakStatus();
         }
 
         function initBreakCountdown() {

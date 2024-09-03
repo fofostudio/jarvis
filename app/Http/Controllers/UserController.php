@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GroupOperator;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,14 +12,52 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::where('role', 'operator')->paginate(40);
-        return view('users.index', compact('users'));
+        $users = User::where('role', 'operator')
+            ->where('email', '!=', 'noname@mail.com') // Excluir el usuario con este correo
+            ->orderBy('name', 'asc')
+            ->paginate(40);
+        $groupOperators = GroupOperator::with('user')->get();
+
+        return view('users.index', compact('users', 'groupOperators'));
     }
     public function indexadmin()
     {
-        $users = User::whereIn('role', ['cooperative', 'admin'])->paginate(40);
-        return view('users.index', compact('users'));
+        $users = User::whereIn('role', ['coperative', 'admin','coordinador'])->orderBy('name', 'asc')->paginate(40);
+        return view('users.index-admin', compact('users'));
     }
+    public function createadmin()
+    {
+        return view('users.create-admin');
+    }
+    public function storeadmin(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'identification' => 'required|string|max:255|unique:users',
+            'birth_date' => 'date',
+            'phone' => 'string|max:255',
+            'address' => 'string|max:255',
+            'neighborhood' => 'string|max:255',
+            'role' => 'required',
+        ]);
+
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar'] = $avatarPath;
+        } else {
+            $validated['avatar'] = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?20150327203541';        }
+
+        $validated['password'] = Hash::make($validated['password']);
+        $validated['entry_date'] = now(); // Establece la fecha de ingreso como la fecha y hora actuales
+
+        User::create($validated);
+
+        return redirect()->route('admin.users')->with('success', 'User created successfully.');
+    }
+
 
     public function create()
     {
@@ -33,7 +72,6 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'identification' => 'required|string|max:255|unique:users',
-            'username' => 'required|string|max:255|unique:users',
             'birth_date' => 'required|date',
             'phone' => 'required|string|max:255',
             'address' => 'required|string|max:255',
@@ -43,8 +81,7 @@ class UserController extends Controller
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $validated['avatar'] = $avatarPath;
-
-        }else {
+        } else {
             $validated['avatar'] = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?20150327203541';
         }
 
