@@ -28,7 +28,8 @@
     ],
     "background": {
       "service_worker": "background.js",
-      "type": "module"
+        "type": "module"
+
     },
     "content_scripts": [
       {
@@ -63,22 +64,8 @@
     },
     "web_accessible_resources": [
       {
-        "resources": [
-          "platforms/*",
-          "utils/*"
-        ],
-        "matches": [
-          "http://jarvisbot.biz/*",
-          "https://jarvisbot.biz/*",
-          "https://udate.love/*",
-          "https://www.amolatina.com/*",
-          "https://talkytimes.com/*",
-          "https://allcreate.com/*",
-          "https://www.sociate.love/*",
-          "https://latichatte.com/*",
-          "https://timedatechat.com/*",
-          "https://lovedatez.com/*"
-        ]
+        "resources": ["platforms/*", "utils/*"],
+        "matches": ["https://*/*", "http://*/*"]
       }
     ]
   }

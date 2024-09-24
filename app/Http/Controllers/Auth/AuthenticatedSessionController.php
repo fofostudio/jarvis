@@ -40,7 +40,7 @@ class AuthenticatedSessionController extends Controller
         $token = JWTAuth::fromUser(Auth::user());
 
         // Store token in a secure HTTP-only cookie
-        Cookie::queue('jwt_token', $token, 60 * 24, null, null, true, true, false, 'Strict'); // 24 hours expiry
+        Cookie::queue('jwt_token', $token, 60 * 24, null, null, true, true, false, 'Strict');
 
         return redirect()->intended(RouteServiceProvider::HOME);
     }
@@ -59,6 +59,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         // Remove the JWT cookie
+        // Remove the JWT cookie
         Cookie::queue(Cookie::forget('jwt_token'));
 
         return redirect('/');
@@ -75,10 +76,23 @@ class AuthenticatedSessionController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        $user = auth('api')->user();
+
+        $tokenData = [
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => JWTAuth::factory()->getTTL() * 60
+        ];
+
         $this->logSession($request);
 
-        return $this->respondWithToken($token);
+        return response()->json([
+            'success' => true,
+            'user' => $user,
+            'token' => $tokenData
+        ]);
     }
+
 
     /**
      * Log the user out of the API application.

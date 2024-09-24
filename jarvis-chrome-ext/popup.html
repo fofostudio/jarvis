@@ -1,38 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JarvisBot Extension</title>
-    <style>
-        body {
-            width: 300px;
-            font-family: Arial, sans-serif;
-            padding: 10px;
-        }
-        h1 {
-            font-size: 18px;
-            color: #333;
-        }
-        #userInfo, #taskList, #status {
-            margin-bottom: 15px;
-        }
-        button {
-            width: 100%;
-            padding: 5px;
-            margin-top: 5px;
-        }
-        #status {
-            font-style: italic;
-        }
-    </style>
-</head>
-<body>
-    <h1>JarvisBot Extension</h1>
-    <div id="userInfo">Cargando información del usuario...</div>
-    <div id="taskList"></div>
-    <div id="status"></div>
-    <button id="refreshSession">Actualizar Sesión</button>
-    <script src="popup.js"></script>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>JarvisBot Extension</title>
+        <style>
+            body {
+                width: 300px;
+                font-family: Arial, sans-serif;
+                padding: 10px;
+            }
+            h1 {
+                font-size: 18px;
+                color: #333;
+            }
+            #userInfo,
+            #taskList,
+            #status {
+                margin-bottom: 15px;
+            }
+            button {
+                width: 100%;
+                padding: 5px;
+                margin-top: 5px;
+            }
+            #status {
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>JarvisBot Extension</h1>
+        <div id="userInfo">Cargando información del usuario...</div>
+        <div id="taskList"></div>
+        <div id="status"></div>
+        <button id="refreshSession">Actualizar Sesión</button>
+        <script src="popup.js"></script>
+    </body>
 </html>

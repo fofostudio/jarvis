@@ -1,7 +1,6 @@
 // background.js
 
-import { setApiBaseUrl, fetchFromApi } from "./utils/api.js";
-
+import { setApiBaseUrl, fetchFromApi, authenticatedFetch, clearUserSession } from './utils/api.js';
 setApiBaseUrl("https://jarvisbot.biz/api");
 
 // Configuración
@@ -20,6 +19,27 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.alarms.create("checkSession", { periodInMinutes: 5 });
 });
 
+chrome.cookies.onChanged.addListener(async (changeInfo) => {
+    if (
+        changeInfo.cookie.name === JWT_COOKIE_NAME &&
+        changeInfo.cause === "explicit"
+    ) {
+        if (changeInfo.removed) {
+            await clearUserSession();
+        } else {
+            const jwtToken = changeInfo.cookie.value;
+            await chrome.storage.local.set({ jwtToken });
+            const userData = await fetchUserData(jwtToken);
+            if (userData) {
+                await storeUserInfo(userData);
+                userInfo = userData;
+                broadcastMessage({ action: "sessionUpdated", userData });
+            } else {
+                await clearUserSession();
+            }
+        }
+    }
+});
 // Verificar sesión periódicamente
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === "checkSession") {
@@ -41,6 +61,7 @@ chrome.runtime.onConnect.addListener((port) => {
         // Manejar mensajes aquí
     });
 });
+
 async function checkAndUpdateSession() {
     console.log("Iniciando checkAndUpdateSession");
     try {
@@ -49,34 +70,24 @@ async function checkAndUpdateSession() {
             console.log(
                 "Token JWT obtenido:",
                 jwtToken.substring(0, 20) + "..."
-            ); // Muestra solo una parte del token por seguridad
-
-            console.log("Intentando obtener datos del usuario con el token");
+            );
 
             const userData = await fetchUserData(jwtToken);
 
             if (userData) {
                 console.log(
                     "Datos del usuario obtenidos exitosamente:",
-                    JSON.stringify(userData, null, 2)
+                    userData
                 );
 
-                // Actualizar la información del usuario en el almacenamiento local
-                await chrome.storage.local.set({ userInfo: userData });
+                await storeUserInfo(userData);
+                console.log("Información del usuario almacenada");
+
+                userInfo = userData;
+                broadcastMessage({ action: "sessionUpdated", userData });
                 console.log(
-                    "Información del usuario actualizada en el almacenamiento local"
+                    "Mensaje de sesión actualizada enviado a los content scripts"
                 );
-
-                // Actualizar el estado de la aplicación
-                updateAppState(userData);
-                console.log("Estado de la aplicación actualizado");
-
-                // Notificar a los componentes de la extensión sobre la actualización
-                chrome.runtime.sendMessage({
-                    action: "sessionUpdated",
-                    userData: userData,
-                });
-                console.log("Notificación de sesión actualizada enviada");
             } else {
                 console.log("No se pudo obtener datos del usuario");
                 await clearUserSession();
@@ -87,36 +98,10 @@ async function checkAndUpdateSession() {
         }
     } catch (error) {
         console.error("Error al verificar sesión:", error);
-        console.error("Stack trace:", error.stack);
         await clearUserSession();
     }
     console.log("Finalizando checkAndUpdateSession");
 }
-
-// Función auxiliar para actualizar el estado de la aplicación
-function updateAppState(userData) {
-    // Aquí puedes agregar lógica para actualizar el estado global de tu aplicación
-    // Por ejemplo, actualizar el estado de Redux, o variables globales
-    console.log(
-        "Actualizando estado de la aplicación con los datos del usuario"
-    );
-    // Ejemplo: window.appState.currentUser = userData;
-}
-
-// Función auxiliar para limpiar la sesión del usuario
-async function clearUserSession() {
-    console.log("Limpiando sesión del usuario");
-    await chrome.storage.local.remove(["userInfo", "jwtToken"]);
-    // Limpiar cualquier otro dato de sesión que puedas tener
-
-    // Notificar a los componentes de la extensión sobre la limpieza de la sesión
-    chrome.runtime.sendMessage({ action: "sessionCleared" });
-    console.log("Notificación de sesión limpiada enviada");
-}
-
-// Asegúrate de que estas funciones estén definidas o importadas correctamente
-// async function getJwtToken() { ... }
-// async function fetchUserData(token) { ... }
 
 // Obtener token JWT de las cookies
 function getJwtToken() {
@@ -138,7 +123,9 @@ function getJwtToken() {
 
 async function fetchUserData(token) {
     try {
-        const response = await fetchFromApi("/user-info");
+        const response = await fetchFromApi("/user-info", {
+            headers: { Authorization: `Bearer ${token}` },
+        });
 
         console.log("Respuesta completa de /user-info:", response);
 
@@ -156,6 +143,7 @@ async function fetchUserData(token) {
         return null;
     }
 }
+
 // Almacenar información del usuario
 async function storeUserInfo(userData) {
     return new Promise((resolve) => {
@@ -180,15 +168,82 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true;
 });
-
-// Añadir tarea a la cola
-function addTaskToQueue(task) {
-    taskQueue.push(task);
-    if (!isProcessingQueue) {
-        processNextTask();
-    }
+function checkSessionCookie() {
+    chrome.cookies.get(
+        { url: "https://jarvisbot.biz", name: "jwt_token" },
+        function (cookie) {
+            if (cookie) {
+                // La cookie existe, verificar el token
+                verifyToken(cookie.value);
+            } else {
+                // No hay cookie, el usuario no está logueado
+                clearUserSession();
+            }
+        }
+    );
 }
 
+function verifyToken(token) {
+    fetch("https://jarvisbot.biz/api/auth/validate-token", {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.user) {
+                // Token válido, almacenar información del usuario
+                chrome.storage.local.set({ userInfo: data.user });
+            } else {
+                // Token inválido
+                clearUserSession();
+            }
+        })
+        .catch((error) => {
+            console.error("Error validando token:", error);
+            clearUserSession();
+        });
+}
+function loadOperatorInfo() {
+    chrome.storage.local.get("userInfo", function (data) {
+        if (data.userInfo) {
+            fetch("https://jarvisbot.biz/api/operator-info", {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${data.userInfo.token}`,
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    chrome.storage.local.set({ operatorInfo: data });
+                })
+                .catch((error) =>
+                    console.error(
+                        "Error cargando información del operador:",
+                        error
+                    )
+                );
+        }
+    });
+}
+// Añadir tarea a la cola
+function addTaskToQueue(task) {
+    if (
+        userInfo &&
+        userInfo.platforms.includes(task.platform) &&
+        userInfo.groups.some((group) => group.name === task.group)
+    ) {
+        taskQueue.push(task);
+        if (!isProcessingQueue) {
+            processNextTask();
+        }
+    } else {
+        console.log(
+            `Tarea no aplicable para la plataforma ${task.platform} y grupo ${task.group} del usuario`
+        );
+    }
+}
 // Procesar siguiente tarea en la cola
 async function processNextTask() {
     if (taskQueue.length === 0) {
@@ -280,5 +335,9 @@ function sendNotification(title, message) {
     });
 }
 
-// Exportar funciones que puedan ser necesarias en otros scripts
-export { checkAndUpdateSession, sendNotification };
+console.log("Background script loaded");
+
+chrome.runtime.onInstalled.addListener(() => {
+    console.log("Extension installed");
+    // Más código de inicialización
+});

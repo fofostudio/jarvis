@@ -56,12 +56,13 @@ Route::post('auth/refresh', [AuthenticatedSessionController::class, 'refresh']);
 Route::get('auth/me', [AuthenticatedSessionController::class, 'me']);
 Route::get('auth/validate-token', [AuthenticatedSessionController::class, 'validateToken']);
 
-// Rutas protegidas (ahora públicas)
-Route::get('/group', [ExtController::class, 'loadGroup']);
-Route::get('/girls', [ExtController::class, 'loadGirls']);
-Route::get('/platforms', [ExtController::class, 'loadPlatforms']);
+Route::group(['middleware' => ['auth:api']], function () {
+    Route::get('/group', [ExtController::class, 'loadGroup']);
+    Route::get('/girls', [ExtController::class, 'loadGirls']);
+    Route::get('/platforms', [ExtController::class, 'loadPlatforms']);
+    Route::post('/execute-task', [TaskResultController::class, 'executeTask']);
+    Route::post('/task-results', [TaskResultController::class, 'store']);
+});
 
-// Tareas (ahora públicas)
-Route::get('/platform-tasks/{platform}', [PlatformController::class, 'getTasks']);
-Route::post('/execute-task', [TaskResultController::class, 'executeTask']);
-Route::post('/task-results', [TaskResultController::class, 'store']);
+// Ruta para invalidar token
+Route::post('/logout', [AuthenticatedSessionController::class, 'logout'])->middleware('auth:api');
