@@ -71,6 +71,7 @@ class DashboardController extends Controller
                 return [
                     'id_operador' => $operator->id,
                     'name' => $operator->name,
+                    'avatar' => $operator->avatar,
                     'current_group' => $this->getCurrentGroup($operator),
                     'session_start' => $latestSessionLog ? $latestSessionLog->first_login : null,
                     'session_end' => $latestSessionLog ? $latestSessionLog->last_logout : null,
@@ -333,52 +334,5 @@ class DashboardController extends Controller
         ));
     }
 
-    private function coperativeDashboard($user)
-    {
-        $currentShift = $this->getCurrentShift();
-        $groupOperator = GroupOperator::where('user_id', $user->id)
-            ->first();
 
-        $assignedGroup = $groupOperator ? $groupOperator->group : null;
-        $assignedGirls = $assignedGroup ? $assignedGroup->girls : collect();
-
-        $operatorPoints = Point::where('user_id', $user->id)
-            ->where('date', '>=', Carbon::now()->subDays(30))
-            ->orderBy('date')
-            ->get();
-
-        $totalPoints = $operatorPoints->sum('points');
-        $totalGoal = $operatorPoints->sum('goal');
-
-        $chartData = $operatorPoints->groupBy('date')->map(function ($items) {
-            return [
-                'date' => $items->first()->date,
-                'points' => $items->sum('points'),
-                'goal' => $items->sum('goal'),
-            ];
-        })->values();
-
-        $lastLogins = SessionLog::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
-        $isOnBreak = $user->is_on_break ?? false;
-
-        // Obtener la jornada asignada
-        $assignedShift = $currentShift ? ucfirst($currentShift) : 'No asignado';
-
-        return view('dashboard.operator', compact(
-            'assignedGroup',
-            'assignedGirls',
-            'totalPoints',
-            'totalGoal',
-            'chartData',
-            'currentShift',
-            'lastLogins',
-            'groupOperator',
-            'isOnBreak',
-            'assignedShift'
-        ));
-    }
 }

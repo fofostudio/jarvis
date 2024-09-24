@@ -36,36 +36,63 @@
                     </div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Días a tiempo
-                                <span class="badge bg-success rounded-pill">{{ $indicators['onTimeCount'] }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Días con llegada tarde
-                                <span class="badge bg-warning rounded-pill">{{ $indicators['lateCount'] }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Días ausente
-                                <span class="badge bg-danger rounded-pill">{{ $indicators['absentCount'] }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Tiempo total de breaks
-                                <span
-                                    class="badge bg-info rounded-pill">{{ number_format($indicators['totalBreakTime'] / 60, 2) }}
-                                    horas</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Promedio de horas trabajadas
-                                <span
-                                    class="badge bg-primary rounded-pill">{{ number_format($indicators['averageWorkHours'], 2) }}
-                                    horas</span>
-                            </li>
+                            @if (isset($indicators))
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Días a tiempo
+                                    <span class="badge bg-success rounded-pill">{{ $indicators['on_time'] }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Días con llegada tarde
+                                    <span class="badge bg-warning rounded-pill">{{ $indicators['late'] }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Días ausente
+                                    <span class="badge bg-danger rounded-pill">{{ $indicators['absent'] }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Fallas justificadas
+                                    <span
+                                        class="badge bg-primary rounded-pill">{{ $indicators['justified_absence'] }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Suspensiones
+                                    <span class="badge bg-warning rounded-pill">{{ $indicators['suspension'] }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Días remotos
+                                    <span class="badge bg-info rounded-pill">{{ $indicators['remote'] }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Recuperaciones de retardo
+                                    <span
+                                        class="badge bg-secondary rounded-pill">{{ $indicators['late_recovery'] }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Recuperaciones de falla
+                                    <span
+                                        class="badge bg-dark rounded-pill">{{ $indicators['absence_recovery'] }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Tiempo total de breaks
+                                    <span
+                                        class="badge bg-info rounded-pill">{{ number_format($indicators['totalBreakTime'] / 60, 2) }}
+                                        horas</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Promedio de horas trabajadas
+                                    <span
+                                        class="badge bg-primary rounded-pill">{{ number_format($indicators['averageWorkHours'], 2) }}
+                                        horas</span>
+                                </li>
+                            @else
+                                <li class="list-group-item">No hay datos de indicadores disponibles.</li>
+                            @endif
+
                         </ul>
                     </div>
                 </div>
             </div>
         </div>
-
 
         <div class="row">
             <div class="col-md-6">
@@ -82,23 +109,31 @@
                                         <th>Hora de Inicio</th>
                                         <th>Hora de Salida</th>
                                         <th>Horas Trabajadas</th>
+                                        <th>Estado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($sessionLogs as $log)
+                                    @if (isset($sessionLogs) && $sessionLogs->count() > 0)
+                                        @foreach ($sessionLogs as $log)
+                                            <tr>
+                                                <td>{{ $log->date->format('d-m-Y') }}</td>
+                                                <td>{{ $log->first_login ? $log->first_login->format('g:i A') : '-' }}</td>
+                                                <td>{{ $log->last_logout ? $log->last_logout->format('g:i A') : '-' }}</td>
+                                                <td>
+                                                    @if ($log->first_login && $log->last_logout)
+                                                        {{ $log->last_logout->diffInHours($log->first_login) }} horas
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <td>{{ $log->status }}</td>
+                                            </tr>
+                                        @endforeach
+                                    @else
                                         <tr>
-                                            <td>{{ $log->date->format('d-m-Y') }}</td>
-                                            <td>{{ $log->first_login ? $log->first_login->format('g:i A') : '-' }}</td>
-                                            <td>{{ $log->last_logout ? $log->last_logout->format('g:i A') : '-' }}</td>
-                                            <td>
-                                                @if ($log->first_login && $log->last_logout)
-                                                    {{ $log->last_logout->diffInHours($log->first_login) }} horas
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
+                                            <td colspan="5">No hay registros de sesión disponibles.</td>
                                         </tr>
-                                    @endforeach
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
@@ -123,16 +158,24 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @if (isset($breakLogs) && $breakLogs->count() > 0)
                                     @foreach ($breakLogs as $log)
-                                        <tr>
-                                            <td>{{ $log->start_time->format('d-m-Y') }}</td>
-                                            <td>{{ $log->start_time->format('g:i A') }}</td>
-                                            <td>{{ $log->expected_end_time->format('g:i A') }}</td>
-                                            <td>{{ $log->actual_end_time ? $log->actual_end_time->format('g:i A') : '-' }}
-                                            </td>
-                                            <td>{{ $log->overtime > 0 ? $log->overtime . ' minutos' : '-' }}</td>
-                                        </tr>
-                                    @endforeach
+                                    <tr>
+                                        <td>{{ $log->start_time->format('d-m-Y') }}</td>
+                                        <td>{{ $log->start_time->format('g:i A') }}</td>
+                                        <td>{{ $log->expected_end_time->format('g:i A') }}</td>
+                                        <td>{{ $log->actual_end_time ? $log->actual_end_time->format('g:i A') : '-' }}
+                                        </td>
+                                        <td>{{ $log->overtime > 0 ? $log->overtime . ' minutos' : '-' }}</td>
+                                    </tr>
+                                @endforeach
+                                    @else
+                                    <tr>
+                                        <td colspan="5">No hay registros de Break disponibles.</td>
+                                    </tr>
+
+                                    @endif
+
                                 </tbody>
                             </table>
                         </div>
@@ -140,25 +183,24 @@
                 </div>
             </div>
         </div>
-
     </div>
 @endsection
 
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.css" rel="stylesheet">
+    <style>
+        .fc-event-dot {
+            margin-right: 5px;
+        }
 
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.css" rel="stylesheet">
-<style>
-    .fc-event-dot {
-        margin-right: 5px;
-    }
+        .fc-event-title {
+            font-weight: bold;
+        }
+    </style>
+@endpush
 
-    .fc-event-title {
-        font-weight: bold;
-    }
-</style>
-
-@section('javascript')
+@push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.js"></script>
-
     <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap4.min.js"></script>
 
@@ -169,7 +211,7 @@
                 var calendar = new FullCalendar.Calendar(calendarEl, {
                     initialView: 'dayGridMonth',
                     events: @json($calendarEvents),
-                    initialDate: new Date(), // Esto hará que el calendario se inicie en el mes actual
+                    initialDate: new Date(),
                     headerToolbar: {
                         left: 'prev,next today',
                         center: 'title',
@@ -183,12 +225,12 @@
                                 .event.backgroundColor + '">' + arg.event.title + '</div>'
                         };
                     },
-                    eventTimeFormat: { // Esto cambiará el formato de la hora a 12 horas
+                    eventTimeFormat: {
                         hour: 'numeric',
                         minute: '2-digit',
                         meridiem: 'short'
                     },
-                    locale: 'es', // Configurar el idioma a español
+                    locale: 'es',
                     buttonText: {
                         today: 'Hoy',
                         month: 'Mes',
@@ -204,8 +246,7 @@
             } else {
                 console.error('Calendar element not found');
             }
-            // Inicializar DataTables
-            // Inicializar DataTables
+
             $('#session-logs-table').DataTable({
                 pageLength: 5,
                 lengthChange: false,
@@ -241,4 +282,4 @@
             });
         });
     </script>
-@endsection
+@endpush

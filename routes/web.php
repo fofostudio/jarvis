@@ -25,6 +25,7 @@ use App\Http\Controllers\PointController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\ScheduleCalendarController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WorkPlanController;
 
@@ -39,6 +40,14 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/admin/get-session-log-time/{userId}/{date}', [SessionLogController::class, 'getSessionLogTime'])->name('admin.get-session-log-time');
+    // Nueva ruta para obtener datos de un registro de sesión específico
+    Route::get('/admin/get-session-log-data/{userId}/{date}', [SessionLogController::class, 'getSessionLogData'])
+        ->name('admin.get-session-log-data');
+
+    // Nueva ruta para actualizar el estado de asistencia
+    Route::post('/admin/update-attendance-status', [SessionLogController::class, 'updateAttendanceStatus'])
+        ->name('admin.update-attendance-status');
 
     Route::post('/admin/close-operator-session', [SessionLogController::class, 'closeOperatorSession'])->name('admin.close-operator-session');
     Route::get('/gestion-breaks', [GestionBreaksController::class, 'index'])
@@ -75,6 +84,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-logins', [SessionLogController::class, 'myLogins'])->name('my_logins');
     Route::post('/update-break', [BreakController::class, 'updateBreak']);
     Route::post('/start-break', [BreakController::class, 'startBreak']);
+    Route::get('/schedule-calendar', [ScheduleCalendarController::class, 'index'])->name('schedule-calendar.index');
+    Route::post('/schedule-calendar/update-day', [ScheduleCalendarController::class, 'updateDay'])->name('schedule-calendar.update-day');
     Route::post('/end-break', [BreakController::class, 'endBreak']);
     Route::get('/break-status', [BreakController::class, 'getBreakStatus']);
     Route::get('/group-points', [OperatorController::class, 'groupPoints']);

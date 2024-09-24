@@ -141,41 +141,54 @@
             </div>
         </div>
     </div>
-    @if (auth()->user()->role == 'super_admin'|| auth()->user()->role == 'coordinador' )
-     <!-- Modal for changing attendance status -->
-     <div class="modal fade" id="changeStatusModal" tabindex="-1" aria-labelledby="changeStatusModalLabel"
-     aria-hidden="true">
-     <div class="modal-dialog">
-         <div class="modal-content">
-             <div class="modal-header">
-                 <h5 class="modal-title" id="changeStatusModalLabel">Cambiar Estado de Asistencia</h5>
-                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-             </div>
-             <div class="modal-body">
-                 <p>Operador: <span id="modalOperatorName"></span></p>
-                 <p>Fecha: <span id="modalDate"></span></p>
-                 <form id="changeStatusForm">
-                     <div class="mb-3">
-                         <label for="statusSelect" class="form-label">Nuevo Estado:</label>
-                         <select class="form-select" id="statusSelect">
-                             <option value="on_time">A Tiempo</option>
-                             <option value="late">Llegó Tarde</option>
-                             <option value="justified_absence">Falla Justificada</option>
-                             <option value="suspension">Suspensión</option>
-                             <option value="remote">Remoto</option>
-                             <option value="late_recovery">Rec Retardo</option>
-                             <option value="absence_recovery">Rec Falla</option>
-                         </select>
-                     </div>
-                 </form>
-             </div>
-             <div class="modal-footer">
-                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                 <button type="button" class="btn btn-primary" id="saveStatusChange">Guardar Cambios</button>
-             </div>
-         </div>
-     </div>
- </div>
+    @if (auth()->user()->role == 'super_admin' || auth()->user()->role == 'coordinador')
+        <!-- Modal for changing attendance status -->
+        <div class="modal fade" id="changeStatusModal" tabindex="-1" aria-labelledby="changeStatusModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="changeStatusModalLabel">Cambiar Estado de Asistencia</h5>
+                        <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Operador: <span id="modalOperatorName"></span></p>
+                        <p>Fecha: <span id="modalDate"></span></p>
+                        <p>Hora de Registro: <span id="modalRegisteredTime"></span></p>
+                        <form id="changeStatusForm">
+                            <div class="mb-3">
+                                <label for="statusSelect" class="form-label">Nuevo Estado:</label>
+                                <select class="form-select" id="statusSelect">
+                                    <option value="on_time">A Tiempo</option>
+                                    <option value="late">Llegó Tarde</option>
+                                    <option value="justified_absence">Falla Justificada</option>
+                                    <option value="suspension">Suspensión</option>
+                                    <option value="remote">Remoto</option>
+                                    <option value="late_recovery">Rec Retardo</option>
+                                    <option value="absence_recovery">Rec Falla</option>
+                                </select>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="invertedShiftCheck">
+                                <label class="form-check-label" for="invertedShiftCheck">Jornada Invertida</label>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="optionalWorkCheck">
+                                <label class="form-check-label" for="optionalWorkCheck">Trabajo Opcional</label>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="notScheduledCheck">
+                                <label class="form-check-label" for="notScheduledCheck">No Programado para Trabajar</label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="saveStatusChange">Guardar Cambios</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     @endif
 
     <style>
@@ -224,6 +237,7 @@
         }
     </style>
 @endsection
+
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -231,7 +245,11 @@
             const modal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
             const modalOperatorName = document.getElementById('modalOperatorName');
             const modalDate = document.getElementById('modalDate');
+            const modalRegisteredTime = document.getElementById('modalRegisteredTime');
             const statusSelect = document.getElementById('statusSelect');
+            const invertedShiftCheck = document.getElementById('invertedShiftCheck');
+            const optionalWorkCheck = document.getElementById('optionalWorkCheck');
+            const notScheduledCheck = document.getElementById('notScheduledCheck');
             const saveStatusChangeBtn = document.getElementById('saveStatusChange');
 
             let currentCell = null;
@@ -241,14 +259,28 @@
                     currentCell = this;
                     const operatorId = this.dataset.operatorId;
                     const date = this.dataset.date;
-                    const status = this.dataset.status;
                     const operatorName = this.closest('tr').querySelector('td').textContent;
 
                     modalOperatorName.textContent = operatorName;
                     modalDate.textContent = date;
-                    statusSelect.value = status;
 
-                    modal.show();
+                    // Fetch the session log data from the server
+                    fetch(`/admin/get-session-log-data/${operatorId}/${date}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            modalRegisteredTime.textContent = data.registeredTime ||
+                                'No registrado';
+                            statusSelect.value = data.status || 'on_time';
+                            invertedShiftCheck.checked = data.isInvertedShift;
+                            optionalWorkCheck.checked = data.isOptionalWork;
+                            notScheduledCheck.checked = data.isNotScheduled;
+                            modal.show();
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            modalRegisteredTime.textContent = 'Error al obtener los datos';
+                            modal.show();
+                        });
                 });
             });
 
@@ -265,7 +297,10 @@
                         body: JSON.stringify({
                             user_id: currentCell.dataset.operatorId,
                             date: currentCell.dataset.date,
-                            status: newStatus
+                            status: newStatus,
+                            is_inverted_shift: invertedShiftCheck.checked,
+                            is_optional_work: optionalWorkCheck.checked,
+                            is_not_scheduled: notScheduledCheck.checked
                         })
                     })
                     .then(response => response.json())
@@ -274,6 +309,11 @@
                             currentCell.dataset.status = newStatus;
                             currentCell.textContent = statusSelect.options[statusSelect.selectedIndex]
                                 .text;
+
+                            // Actualizar el estilo de la celda basado en los nuevos datos
+                            updateCellStyle(currentCell, newStatus, invertedShiftCheck.checked,
+                                optionalWorkCheck.checked, notScheduledCheck.checked);
+
                             modal.hide();
                         } else {
                             alert('Error al actualizar el estado de asistencia');
@@ -284,6 +324,27 @@
                         alert('Error al actualizar el estado de asistencia');
                     });
             });
+
+            function updateCellStyle(cell, status, isInverted, isOptional, isNotScheduled) {
+                // Eliminar todas las clases de estado anteriores
+                cell.classList.remove('on-time', 'late', 'absent', 'justified-absence', 'suspension', 'remote',
+                    'late-recovery', 'absence-recovery');
+
+                // Añadir la clase para el nuevo estado
+                cell.classList.add(status.replace('_', '-'));
+
+                // Añadir indicadores visuales para las opciones adicionales
+                cell.style.border = isInverted ? '2px solid blue' : '';
+                cell.style.fontStyle = isOptional ? 'italic' : 'normal';
+                cell.style.textDecoration = isNotScheduled ? 'line-through' : 'none';
+
+                // Actualizar el texto de la celda para incluir indicadores
+                let cellText = cell.textContent;
+                if (isInverted) cellText += ' (I)';
+                if (isOptional) cellText += ' (O)';
+                if (isNotScheduled) cellText += ' (NP)';
+                cell.textContent = cellText;
+            }
         });
     </script>
 @endpush

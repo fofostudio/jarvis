@@ -11,6 +11,12 @@
         </a>
     </li>
     <li class="nav-item">
+        <a href="{{ route('schedule-calendar.index') }}"
+            class="nav-link text-truncate @if (request()->routeIs('schedule-calendar.index')) active @endif">
+            <i class="bi bi-calendar-week me-2"></i> {{ __('admin.GestionHorarioTrabajo') }}
+        </a>
+    </li>
+    <li class="nav-item">
         <a href="{{ route('admin.session_logs.index') }}"
             class="nav-link text-truncate @if (request()->routeIs('admin.session_logs.*')) active @endif">
             <i class="bi bi-clock-history me-2"></i> {{ __('admin.asistencia_registro') }}
@@ -210,6 +216,18 @@
         </ul>
     </li>
     <li class="nav-item">
+        <a href="{{ route('operator.myShopItems') }}"
+            class="nav-link text-truncate @if (request()->routeIs('operator.Messages')) active @endif">
+            <i class="bi bi-calendar-week me-2"></i> {{ __('operator.MessagesChat') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('operator.myShopItems') }}"
+            class="nav-link text-truncate @if (request()->routeIs('operator.Messages')) active @endif">
+            <i class="bi bi-calendar-week me-2"></i> {{ __('operator.CorporativeMail') }}
+        </a>
+    </li>
+    <li class="nav-item">
         <a href="{{ route('my_points') }}"
             class="nav-link text-truncate @if (request()->routeIs('my_points')) active @endif">
             <i class="bi bi-trophy me-2"></i> {{ __('operator.my_points') }}
@@ -223,13 +241,13 @@
     </li>
     <li class="nav-item">
         <a href="{{ route('my-operative-reports') }}"
-            class="nav-link text-truncate @if (request()->routeIs('my_operative_reports')) active @endif">
+            class="nav-link text-truncate @if (request()->routeIs('my-operative-reports')) active @endif">
             <i class="bi bi-file-earmark-text me-2"></i> {{ __('operator.my_operative_reports') }}
         </a>
     </li>
     <li class="nav-item">
         <a href="{{ route('groups.index') }}"
-            class="nav-link text-truncate @if (request()->routeIs('categories.*')) active @endif">
+            class="nav-link text-truncate @if (request()->routeIs('ranking.*')) active @endif">
             <i class="bi bi-trophy me-2"></i> {{ __('admin.ranking') }}
         </a>
     </li>
@@ -247,7 +265,13 @@
     </li>
     <li class="nav-item">
         <a href="{{ route('operator.myShopItems') }}"
-            class="nav-link text-truncate @if (request()->routeIs('operator.myShopItems')) active @endif">
+            class="nav-link text-truncate @if (request()->routeIs('operator.searchReports')) active @endif">
+            <i class="bi bi-calendar-week me-2"></i> {{ __('operator.searchReports') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('schedule-calendar.index') }}"
+            class="nav-link text-truncate @if (request()->routeIs('schedule-calendar.index')) active @endif">
             <i class="bi bi-calendar-week me-2"></i> {{ __('operator.HorarioTrabajo') }}
         </a>
     </li>

@@ -18,12 +18,18 @@ class SessionLog extends Model
         'ip_address',
         'user_agent',
         'status',
+        'is_inverted_shift',
+        'is_optional_work',
+        'is_not_scheduled'
     ];
 
     protected $casts = [
         'date' => 'date',
         'first_login' => 'datetime',
         'last_logout' => 'datetime',
+        'is_inverted_shift' => 'boolean',
+        'is_optional_work' => 'boolean',
+        'is_not_scheduled' => 'boolean',
     ];
 
     public function user()

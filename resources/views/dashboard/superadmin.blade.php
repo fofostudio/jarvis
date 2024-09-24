@@ -139,12 +139,10 @@
                         <div class="card-body">
                             <div class="row">
                                 @foreach ($inactiveOperators as $operator)
-
-                                        @include('partials.operator_card', [
-                                            'operator' => $operator,
-                                            'cardClass' => 'bg-secondary',
-                                        ])
-
+                                    @include('partials.operator_card', [
+                                        'operator' => $operator,
+                                        'cardClass' => 'bg-secondary',
+                                    ])
                                 @endforeach
                             </div>
                         </div>
@@ -535,9 +533,6 @@
             initBreakToggle();
             // Inicializar el acordeón
 
-
-
-
             function initializeOperatorCards() {
                 $('.operator-card').each(function() {
                     const $card = $(this);
@@ -554,18 +549,15 @@
                     const duration = moment.duration(startTime.add(30, 'minutes').diff(now));
 
                     if (duration.asSeconds() > 0) {
-                        $this.text('Restante: ' + moment.utc(duration.asMilliseconds()).format(
-                            'mm:ss'));
+                        $this.text(moment.utc(duration.asMilliseconds()).format('mm:ss'));
                     } else {
                         const overtime = moment.duration(now.diff(startTime.add(30, 'minutes')));
-                        $this.text('Sobrepasó: ' + moment.utc(overtime.asMilliseconds()).format(
-                            'HH:mm:ss'));
+                        $this.text('+' + moment.utc(overtime.asMilliseconds()).format('mm:ss'));
                         $this.removeClass('countdown').addClass('text-danger overtime');
 
                         const $card = $this.closest('.operator-card');
-                        $card.removeClass('bg-warning').addClass('bg-danger text-white');
-                        $card.find('.badge').removeClass('bg-dark').addClass('bg-light text-dark');
-                        $card.find('.toggle-break').removeClass('btn-warning').addClass('btn-light');
+                        $card.removeClass('bg-warning').addClass('bg-danger');
+                        $card.find('.toggle-break').prop('disabled', true);
                     }
                 });
             }
@@ -577,36 +569,31 @@
             }
 
             function getCardOrder($card) {
-                const status = $card.find('.status-text .badge').text().trim();
-                if (status === 'Activo Break') return 1;
-                if (status === 'Excede Break') return 2;
-                if (status === 'Laborando') return 3;
+                if ($card.find('.countdown').length) return 1;
+                if ($card.find('.overtime').length) return 2;
+                if ($card.hasClass('bg-success')) return 3;
                 return 4; // Inactivo
             }
 
             function updateCardAfterToggle($card, response) {
-                const $cardBody = $card.find('.card-body');
-                const $button = $card.find('.toggle-break');
-                const $statusBadge = $card.find('.status-text .badge');
-                const $cardText = $card.find('.card-text');
+                const $toggleButton = $card.find('.toggle-break');
+                const $statusArea = $card.find('.operator-status');
 
-                $button.text(response.is_on_break ? 'Finalizar Break' : 'Iniciar Break');
-                $button.toggleClass('btn-dark btn-dark');
+                $toggleButton.html('<i class="fas ' + (response.is_on_break ? 'fa-stop' : 'fa-mug-hot') +
+                    ' fa-xs"></i>');
+                $toggleButton.attr('title', response.is_on_break ? 'Fin Break' : 'Iniciar Break');
 
-                $cardBody.removeClass('bg-success bg-warning bg-danger text-white text-dark')
-                    .addClass(response.is_on_break ? 'bg-warning text-dark' : 'bg-success text-white');
+                $card.removeClass('bg-success bg-warning bg-danger')
+                    .addClass(response.is_on_break ? 'bg-warning' : 'bg-success');
 
-                $statusBadge.text(response.is_on_break ? 'Activo Break' : 'Laborando');
-                $statusBadge.removeClass('bg-light text-dark bg-dark text-white')
-                    .addClass(response.is_on_break ? 'bg-dark text-white' : 'bg-dark text-white');
                 if (response.is_on_break) {
                     const now = moment();
-                    $cardText.find('.countdown, .overtime').remove();
-                    $cardText.append('<br><span class="countdown" data-start="' + now.format() +
-                        '">Tiempo restante: 30:00</span>');
+                    $statusArea.find('.countdown, .overtime').remove();
+                    $statusArea.append(
+                        '<i class="fas fa-mug-hot fa-xs ml-1"></i> <span class="countdown" data-start="' + now
+                        .format() + '">30:00</span>');
                 } else {
-                    $card.find('.countdown, .overtime').remove();
-                    $button.removeClass('btn-light');
+                    $statusArea.find('.countdown, .overtime').remove();
                 }
             }
 

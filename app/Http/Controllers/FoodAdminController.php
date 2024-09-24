@@ -245,33 +245,56 @@ class FoodAdminController extends Controller
         $totalSpent = $sales->sum('total_price');
         $totalItems = $sales->sum('quantity');
 
-        $salesByDay = $sales->groupBy(function ($date) {
-            return Carbon::parse($date->sale_date)->format('Y-m-d');
-        });
+        $salesByResponsible = $sales->groupBy('responsible_id');
 
-        $chartData = [];
-        foreach ($salesByDay as $date => $salesGroup) {
-            $chartData[] = [
-                'date' => $date,
-                'total' => $salesGroup->sum('total_price'),
+        $responsibleStats = [];
+        foreach ($salesByResponsible as $responsibleId => $responsibleSales) {
+            $responsible = User::find($responsibleId);
+            $totalDebt = OperatorBalance::getCurrentBalance($responsibleId);
+
+            $responsibleStats[] = [
+                'responsible' => $responsible,
+                'total_sales' => $responsibleSales->sum('total_price'),
+                'total_items' => $responsibleSales->sum('quantity'),
+                'total_debt' => $totalDebt,
+                'sales' => $responsibleSales
             ];
         }
 
-        return view('operator.my_shopitems', compact('sales', 'totalSpent', 'totalItems', 'chartData'));
-    }
+        $chartData = $sales->groupBy(function ($sale) {
+            return Carbon::parse($sale->created_at)->format('Y-m-d');
+        })->map(function ($group) {
+            return [
+                'date' => Carbon::parse($group->first()->created_at)->format('Y-m-d'),
+                'total' => $group->sum('total_price'),
+            ];
+        })->values()->toArray();
 
+        return view('operator.my_shopitems', compact('responsibleStats', 'totalSpent', 'totalItems', 'chartData'));
+    }
 
     public function createSale()
     {
+        // Obtiene los usuarios cuyos nombres no comiencen con '000'
         $users = User::where('name', 'not like', '000%')
             ->orderBy('name', 'asc')
             ->get();
-        $categories = CategoryProduct::with(['products' => function ($query) {
-            $query->where('user_id', Auth::id());
-        }])->get();
 
+        // Obtiene las categorías de productos asociadas al usuario autenticado
+        $categories = CategoryProduct::whereHas('products', function ($query) {
+            // Filtra las categorías que tienen productos asociados al usuario autenticado
+            $query->where('user_id', Auth::id());
+        })
+            ->with(['products' => function ($query) {
+                // Filtra los productos por el usuario autenticado
+                $query->where('user_id', Auth::id());
+            }])
+            ->get();
+
+        // Retorna la vista con las categorías y los usuarios
         return view('foodAdmin.createSale', compact('categories', 'users'));
     }
+
     public function storeSale(Request $request)
     {
         try {

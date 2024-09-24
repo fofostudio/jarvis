@@ -30,39 +30,51 @@
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Detalle de Compras</h5>
-                <div class="table-responsive">
-                    <table id="salesTable" class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Producto</th>
-                                <th>Cantidad</th>
-                                <th>Precio Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($sales as $sale)
+        @foreach ($responsibleStats as $stat)
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Estadísticas para {{ $stat['responsible']->name }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Total Ventas</h6>
+                            <p>{{ number_format($stat['total_sales'], 0, ',', '.') }} COP</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Total Artículos</h6>
+                            <p>{{ $stat['total_items'] }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Deuda Total</h6>
+                            <p>{{ number_format($stat['total_debt'], 0, ',', '.') }} COP</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-striped table-hover">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        @if ($sale->created_at instanceof \DateTime)
-                                            {{ $sale->created_at->format('d/m/Y H:i') }}
-                                        @else
-                                            {{ \Carbon\Carbon::parse($sale->created_at)->format('d/m/Y H:i') }}
-                                        @endif
-                                    </td>
-                                    <td>{{ $sale->product->name }}</td>
-                                    <td>{{ $sale->quantity }}</td>
-                                    <td>{{ number_format($sale->total_price, 0, ',', '.') }} COP</td>
+                                    <th>Fecha</th>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Total</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach ($stat['sales'] as $sale)
+                                    <tr>
+                                        <td>{{ \Carbon\Carbon::parse($sale->created_at)->format('d/m/Y H:i') }}</td>
+                                        <td>{{ $sale->product->name }}</td>
+                                        <td>{{ $sale->quantity }}</td>
+                                        <td>{{ number_format($sale->total_price, 0, ',', '.') }} COP</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
+        @endforeach
     </div>
 @endsection
 
@@ -77,7 +89,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         $(document).ready(function() {
-            $('#salesTable').DataTable({
+            $('table').DataTable({
                 "language": {
                     "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
                 },
