@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\GroupOperator;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -22,7 +24,7 @@ class UserController extends Controller
     }
     public function indexadmin()
     {
-        $users = User::whereIn('role', ['coperative', 'admin','coordinador'])->orderBy('name', 'asc')->paginate(40);
+        $users = User::whereIn('role', ['coperative', 'admin', 'coordinador'])->orderBy('name', 'asc')->paginate(40);
         return view('users.index-admin', compact('users'));
     }
     public function createadmin()
@@ -48,7 +50,8 @@ class UserController extends Controller
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $validated['avatar'] = $avatarPath;
         } else {
-            $validated['avatar'] = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?20150327203541';        }
+            $validated['avatar'] = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?20150327203541';
+        }
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['entry_date'] = now(); // Establece la fecha de ingreso como la fecha y hora actuales
@@ -103,57 +106,100 @@ class UserController extends Controller
     {
         return view('users.edit', compact('user'));
     }
+    public function resetPassword(Request $request, User $user)
+    {
+        $request->validate([
+            'password' => 'required|string|min:8',
+        ]);
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return response()->json(['success' => true]);
+    }
 
     public function update(Request $request, User $user)
     {
-        $rules = [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'role' => 'required|in:super_admin,admin,operator',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'identification' => 'required|string|max:255|unique:users,identification,' . $user->id,
-            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
-            'birth_date' => 'required|date',
-            'phone' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'neighborhood' => 'required|string|max:255',
-        ];
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'identification' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'birth_date' => ['required', 'date'],
+            'phone' => ['required', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:255'],
+            'neighborhood' => ['required', 'string', 'max:255'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+        ]);
 
-        // Solo validar la contraseña si se proporciona
-        if ($request->filled('password')) {
-            $rules['password'] = 'string|min:8';
-        }
-
-        $validated = $request->validate($rules);
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->identification = $request->identification;
+        $user->birth_date = $request->birth_date;
+        $user->phone = $request->phone;
+        $user->address = $request->address;
+        $user->neighborhood = $request->neighborhood;
 
         if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
             if ($user->avatar) {
                 Storage::disk('public')->delete($user->avatar);
             }
+
+            // Store new avatar
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $validated['avatar'] = $avatarPath;
+            $user->avatar = $avatarPath;
         }
 
-        // Actualizar la contraseña solo si se proporciona una nueva
-        if ($request->filled('password')) {
-            $validated['password'] = Hash::make($request->password);
-        } else {
-            // Eliminar el campo de contraseña del array $validated si está vacío
-            unset($validated['password']);
-        }
-
-        $user->fill($validated);
         $user->save();
 
-        return redirect()->route('users.index')->with('success', 'User updated successfully.');
+        return redirect()->route('users.index', $user)->with('success', __('admin.user_updated_successfully'));
     }
     public function destroy(User $user)
-    {
+{
+    try {
+        DB::beginTransaction();
+
+        // Eliminar puntos asociados
+        $user->points()->delete();
+
+        // Eliminar registros de sesión
+        $user->sessionLogs()->delete();
+
+        // Eliminar registros de descanso
+        $user->breakLogs()->delete();
+
+        // Eliminar informes operativos
+        $user->operativeReports()->delete();
+
+        // Eliminar informes auditados
+        $user->auditedReports()->delete();
+
+        // Eliminar asociaciones de grupo
+        $user->groupOperators()->delete();
+
+        // Eliminar ventas asociadas
+        $user->salesAsResponsible()->delete();
+
+        // Eliminar pagos asociados
+        $user->payments()->delete();
+
+        // Eliminar balance del operador
+        $user->operatorBalance()->delete();
+
+        // Eliminar avatar si existe
         if ($user->avatar) {
             Storage::disk('public')->delete($user->avatar);
         }
+
+        // Finalmente, eliminar el usuario
         $user->delete();
 
-        return redirect()->route('users.index')->with('success', 'User deleted successfully.');
+        DB::commit();
+
+        return redirect()->route('users.index')->with('success', 'User and all associated data deleted successfully.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return redirect()->route('users.index')->with('error', 'Failed to delete user. Error: ' . $e->getMessage());
     }
+}
 }

@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
 class DashboardController extends Controller
 {
@@ -27,10 +28,9 @@ class DashboardController extends Controller
             return $this->superAdminDashboard();
         } elseif ($role == 'operator') {
             return $this->operatorDashboard($user);
-        }elseif ($role == 'coperative') {
-            return $this->coperativeDashboard($user);
+        } elseif ($role == 'coperative') {
+            return app(FoodAdminController::class)->dashboard();
         }
-
 
         // Fallback for unauthorized access
         return redirect()->route('home')->with('error', 'Unauthorized access');
@@ -289,8 +289,12 @@ class DashboardController extends Controller
         $assignedGroup = $groupOperator ? $groupOperator->group : null;
         $assignedGirls = $assignedGroup ? $assignedGroup->girls : collect();
 
+        $currentMonth = Carbon::now()->format('m');
+        $currentYear = Carbon::now()->format('Y');
+
         $operatorPoints = Point::where('user_id', $user->id)
-            ->where('date', '>=', Carbon::now()->subDays(30))
+            ->whereMonth('date', $currentMonth)
+            ->whereYear('date', $currentYear)
             ->orderBy('date')
             ->get();
 
@@ -377,5 +381,4 @@ class DashboardController extends Controller
             'assignedShift'
         ));
     }
-
 }

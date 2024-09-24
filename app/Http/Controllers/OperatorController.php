@@ -26,7 +26,31 @@ class OperatorController extends Controller
         }
 
         $data['viewType'] = $viewType;
-        $data['chartData'] = $this->prepareChartData($data['points'], $viewType);
+
+        // Obtener los datos para la gráfica de tendencia de puntos (solo del mes actual)
+        $currentMonth = now()->format('m');
+        $currentYear = now()->format('Y');
+
+        $chartData = $data['points']
+            ->filter(function ($point) use ($currentMonth, $currentYear) {
+                $date = Carbon::parse($point->date);
+                return $date->format('m') == $currentMonth && $date->format('Y') == $currentYear;
+            })
+            ->groupBy(function ($point) {
+                return Carbon::parse($point->date)->format('Y-m-d');
+            })
+            ->map(function ($group) {
+                return [
+                    'date' => Carbon::parse($group->first()->date)->format('Y-m-d'),
+                    'points' => $group->sum('points'),
+                ];
+            })
+            ->values();
+
+        $data['chartData'] = [
+            'labels' => $chartData->pluck('date'),
+            'data' => $chartData->pluck('points'),
+        ];
 
         // Asegúrate de que todas las variables necesarias estén definidas
         $data['dailyGoal'] = $data['dailyGoal'] ?? 100; // Valor por defecto si no está definido

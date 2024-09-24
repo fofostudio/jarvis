@@ -20,9 +20,10 @@
                 <td>{{ $point->points }}</td>
                 <td>{{ $point->goal }}</td>
                 <td>
-                    <a href="{{ route('points.edit', $point) }}" class="btn btn-success rounded-pill btn-sm me-2">
+
+                    <button onclick="openEditModal({{ $point->id }})" class="btn btn-success rounded-pill btn-sm me-2">
                         <i class="bi-pencil"></i>
-                    </a>
+                    </button>
                     <form action="{{ route('points.destroy', $point) }}" method="POST" class="d-inline-block">
                         @csrf
                         @method('DELETE')

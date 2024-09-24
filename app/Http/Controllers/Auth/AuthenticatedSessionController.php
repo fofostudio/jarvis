@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use App\Models\SessionLog;
 use Carbon\Carbon;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cookie;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -31,21 +34,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $user = Auth::user();
-        $today = Carbon::today();
+        $this->logSession($request);
 
+        // Generate JWT token
+        $token = JWTAuth::fromUser(Auth::user());
 
-        $sessionLog = SessionLog::firstOrCreate(
-            ['user_id' => $user->id, 'date' => $today],
-            ['first_login' => now(), 'ip_address' => $request->ip(), 'user_agent' => $request->userAgent()]
-        );
-
-        $sessionLog->increment('login_count');
-
-        if (!$sessionLog->first_login) {
-            $sessionLog->update(['first_login' => now()]);
-        }
-
+        // Store token in a secure HTTP-only cookie
+        Cookie::queue('jwt_token', $token, 60 * 24, null, null, true, true, false, 'Strict'); // 24 hours expiry
 
         return redirect()->intended(RouteServiceProvider::HOME);
     }
@@ -55,10 +50,96 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $this->logLogout();
+
+        Auth::guard('web')->logout();
+
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        // Remove the JWT cookie
+        Cookie::queue(Cookie::forget('jwt_token'));
+
+        return redirect('/');
+    }
+
+    /**
+     * Handle an incoming API authentication request.
+     */
+    public function apiLogin(Request $request): JsonResponse
+    {
+        $credentials = $request->only('email', 'password');
+
+        if (!$token = JWTAuth::attempt($credentials)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $this->logSession($request);
+
+        return $this->respondWithToken($token);
+    }
+
+    /**
+     * Log the user out of the API application.
+     */
+    public function apiLogout(): JsonResponse
+    {
+        $this->logLogout();
+
+        JWTAuth::invalidate(JWTAuth::getToken());
+
+        return response()->json(['message' => 'Successfully logged out']);
+    }
+
+    /**
+     * Refresh a token.
+     */
+    public function refresh(): JsonResponse
+    {
+        return $this->respondWithToken(JWTAuth::refresh());
+    }
+
+    /**
+     * Get the authenticated User.
+     */
+    public function me(): JsonResponse
+    {
+        return response()->json(JWTAuth::user());
+    }
+
+    /**
+     * Log the session information.
+     */
+    private function logSession(Request $request): void
+    {
         $user = Auth::user();
         $today = Carbon::today();
 
+        $sessionLog = SessionLog::firstOrCreate(
+            ['user_id' => $user->id, 'date' => $today],
+            [
+                'first_login' => now(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]
+        );
+
+        $sessionLog->increment('login_count');
+
+        if (!$sessionLog->first_login) {
+            $sessionLog->update(['first_login' => now()]);
+        }
+    }
+
+    /**
+     * Log the logout information.
+     */
+    private function logLogout(): void
+    {
+        $user = Auth::user();
         if ($user) {
+            $today = Carbon::today();
             $sessionLog = SessionLog::where('user_id', $user->id)
                 ->where('date', $today)
                 ->first();
@@ -67,13 +148,39 @@ class AuthenticatedSessionController extends Controller
                 $sessionLog->update(['last_logout' => now()]);
             }
         }
+    }
 
-        Auth::guard('web')->logout();
+    /**
+     * Get the token array structure.
+     */
+    private function respondWithToken(string $token): JsonResponse
+    {
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => JWTAuth::factory()->getTTL() * 60
+        ]);
+    }
 
-        $request->session()->invalidate();
+    /**
+     * Validate the user's JWT token from the cookie.
+     */
+    public function validateToken(Request $request): JsonResponse
+    {
+        try {
+            $token = $request->cookie('jwt_token');
+            if (!$token) {
+                return response()->json(['error' => 'Token not found'], 401);
+            }
 
-        $request->session()->regenerateToken();
+            $user = JWTAuth::setToken($token)->authenticate();
+            if (!$user) {
+                return response()->json(['error' => 'User not found'], 404);
+            }
 
-        return redirect('/');
+            return response()->json(['user' => $user]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Invalid token'], 401);
+        }
     }
 }

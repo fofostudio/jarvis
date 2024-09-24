@@ -142,6 +142,7 @@
                 searching: false,
                 info: false,
                 ordering: true,
+                order: [[3, 'desc']], // Ordena por la columna 'duracion' en orden descendente
                 dom: 't', // Solo muestra la tabla, sin otros controles
             });
 

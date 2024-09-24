@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="shortcut icon" href="#" />
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
+
 
     <title>{{ __('admin.app_tittle') }}</title>
 
@@ -81,6 +82,15 @@
     @stack('styles')
 
     @yield('javascriptheader')
+    <style>
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+        }
+    </style>
 </head>
 
 <body>
@@ -134,8 +144,9 @@
                         <div class="flex-shrink-0 dropdown">
                             <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
                                 id="dropdownUser2" data-bs-toggle="dropdown" aria-expanded="false">
-                                <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}" width="32"
-                                    height="32" class="rounded-circle me-2">
+                                <img src="{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : asset('images/default-avatar.png') }}"
+                                    alt="{{ Auth::user()->name }}" width="32" height="32"
+                                    class="rounded-circle me-2">
                                 <div class="d-none d-sm-block">
                                     <div class="font-medium text-base text-gray-800 dark:text-gray-200">
                                         {{ Auth::user()->name }}</div>
@@ -199,6 +210,7 @@
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="{{ asset('/js/ckeditor/ckeditor.js') }}"></script>

@@ -11,7 +11,6 @@
                 <i class="bi-plus-lg"></i> {{ __('admin.add_points') }}
             </a>
         @endif
-
     </h5>
 
     <div class="content">
@@ -90,78 +89,155 @@
                 </style>
 
                 @php
-                    $startDate = new DateTime(array_key_first($calendarData));
-                    $endDate = new DateTime(array_key_last($calendarData));
-                    $interval = new DateInterval('P1M');
-                    $months = new DatePeriod($startDate, $interval, $endDate);
+                    $currentMonth = new DateTime();
                     $today = new DateTime();
                     $selectedDate = new DateTime($date);
                 @endphp
 
-                @foreach ($months as $month)
-                    <div class="card shadow-custom border-0 mb-4">
-                        <div class="card-body p-lg-4">
-                            <h5 class="mb-3 text-center">{{ $month->format('F Y') }}</h5>
-                            <table class="calendar">
-                                <thead>
-                                    <tr>
-                                        <th>Lun</th>
-                                        <th>Mar</th>
-                                        <th>Mier</th>
-                                        <th>Jue</th>
-                                        <th>Vier</th>
-                                        <th>Sáb</th>
-                                        <th>Dom</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                <div class="card shadow-custom border-0 mb-4">
+                    <div class="card-body p-lg-4">
+                        <h5 class="mb-3 text-center">{{ $currentMonth->format('F Y') }}</h5>
+                        <table class="calendar">
+                            <thead>
+                                <tr>
+                                    <th>Lun</th>
+                                    <th>Mar</th>
+                                    <th>Mier</th>
+                                    <th>Jue</th>
+                                    <th>Vier</th>
+                                    <th>Sáb</th>
+                                    <th>Dom</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php
+                                    $start = new DateTime($currentMonth->format('Y-m-01'));
+                                    $end = new DateTime($currentMonth->format('Y-m-t'));
+                                    $interval = new DateInterval('P1D');
+                                    $days = new DatePeriod($start, $interval, $end);
+                                @endphp
+                                <tr>
+                                    @for ($i = 1; $i < $start->format('N'); $i++)
+                                        <td></td>
+                                    @endfor
+                                    @foreach ($days as $day)
+                                        @if ($day->format('N') == 1 && $day->format('j') > 1)
+                                </tr>
+                                <tr>
+                                    @endif
                                     @php
-                                        $start = new DateTime($month->format('Y-m-01'));
-                                        $end = new DateTime($month->format('Y-m-t'));
-                                        $interval = new DateInterval('P1D');
-                                        $days = new DatePeriod($start, $interval, $end);
+                                        $dayData = $calendarData[$day->format('Y-m-d')] ?? [
+                                            'status' => 'none',
+                                            'shifts' => [],
+                                        ];
                                     @endphp
-                                    <tr>
-                                        @for ($i = 1; $i < $start->format('N'); $i++)
-                                            <td></td>
-                                        @endfor
-                                        @foreach ($days as $day)
-                                            @if ($day->format('N') == 1 && $day->format('j') > 1)
-                                    </tr>
-                                    <tr>
-                @endif
-                @php
-                    $dayData = $calendarData[$day->format('Y-m-d')] ?? ['status' => 'none', 'shifts' => []];
-                @endphp
-                <td class="{{ $dayData['status'] }}
-                                                       {{ $day->format('Y-m-d') == $today->format('Y-m-d') ? 'today' : '' }}
-                                                       {{ $day->format('Y-m-d') == $selectedDate->format('Y-m-d') ? 'selected' : '' }}"
-                    onclick="filterRecords('{{ $day->format('Y-m-d') }}')">
-                    {{ $day->format('d') }}<br>
-                    @foreach (['morning', 'afternoon', 'night'] as $shift)
-                        <span
-                            class="shift-indicator shift-{{ $shift }} {{ in_array($shift, $dayData['shifts']) ? '' : 'd-none' }}"></span>
-                    @endforeach
-                </td>
-                @endforeach
-                @for ($i = $end->format('N'); $i < 7; $i++)
-                    <td></td>
-                @endfor
-                </tr>
-                </tbody>
-                </table>
-            </div>
-        </div>
-        @endforeach
-        <div class="card shadow-custom border-0">
-            <div class="card-body p-lg-4">
-                <h5 class="mb-3">Registros del: {{ $date }}</h5>
-                <div class="table-responsive p-0 records-section">
-                    @include('points.records', ['points' => $points])
+                                    <td class="{{ $dayData['status'] }}
+                                   {{ $day->format('Y-m-d') == $today->format('Y-m-d') ? 'today' : '' }}
+                                   {{ $day->format('Y-m-d') == $selectedDate->format('Y-m-d') ? 'selected' : '' }}"
+                                        onclick="filterRecords('{{ $day->format('Y-m-d') }}')">
+                                        {{ $day->format('d') }}<br>
+                                        @foreach (['morning', 'afternoon', 'night'] as $shift)
+                                            <span
+                                                class="shift-indicator shift-{{ $shift }} {{ in_array($shift, $dayData['shifts']) ? '' : 'd-none' }}"></span>
+                                        @endforeach
+                                    </td>
+                                    @endforeach
+                                    @for ($i = $end->format('N'); $i < 7; $i++)
+                                        <td></td>
+                                    @endfor
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card shadow-custom border-0">
+                    <div class="card-body p-lg-4">
+                        <h5 class="mb-3">Registros</h5>
+                        <div class="table-responsive p-0 records-section">
+                            @include('points.records', ['points' => $points])
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    </div>
+
+    <!-- Modal para editar puntos -->
+    <div class="modal fade" id="editPointModal" tabindex="-1" aria-labelledby="editPointModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPointModalLabel">{{ __('admin.edit_points') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- El formulario se cargará aquí dinámicamente -->
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        function filterRecords(date) {
+            $.ajax({
+                url: '{{ route('points.index') }}',
+                type: 'GET',
+                data: {
+                    date: date
+                },
+                success: function(response) {
+                    $('.records-section').html(response);
+                },
+                error: function(xhr) {
+                    console.error('Error loading records:', xhr.responseText);
+                }
+            });
+        }
+
+        function openEditModal(pointId) {
+            $.ajax({
+                url: `/points/${pointId}/edit`,
+                type: 'GET',
+                success: function(response) {
+                    $('#editPointModal .modal-body').html(response);
+                    $('#editPointModal').modal('show');
+                },
+                error: function(xhr) {
+                    console.error('Error loading edit form:', xhr.responseText);
+                }
+            });
+        }
+
+        $(document).on('submit', '#editPointForm', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var url = form.attr('action');
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    $('#editPointModal').modal('hide');
+                    // Actualizar la tabla de registros
+                    $('.records-section').html(response.records);
+                    // Mostrar mensaje de éxito
+                    alert('Points updated successfully');
+                },
+                error: function(xhr) {
+                    console.error('Error updating points:', xhr.responseText);
+                    // Mostrar errores de validación si los hay
+                    var errors = xhr.responseJSON.errors;
+                    if (errors) {
+                        $.each(errors, function(key, value) {
+                            $('#' + key + '_error').text(value[0]);
+                        });
+                    }
+                }
+            });
+        });
+    </script>
+@endpush

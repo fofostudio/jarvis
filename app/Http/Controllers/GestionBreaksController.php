@@ -37,7 +37,7 @@ class GestionBreaksController extends Controller
                     'inicio' => $break->start_time->format('H:i:s'),
                     'fin' => $break->actual_end_time ? $break->actual_end_time->format('H:i:s') : 'En progreso',
                     'duracion' => $duracion,
-                    'overtime' => $break->overtime ? round($break->overtime / 60, 2) : 0,
+                    'overtime' => $break->overtime ? ($break->overtime) : 0,
                     'estado' => $break->isOngoing() ? 'En progreso' : 'Finalizado'
                 ];
             });
@@ -61,7 +61,7 @@ class GestionBreaksController extends Controller
                     'inicio' => $break->start_time->format('H:i:s'),
                     'fin' => $break->actual_end_time ? $break->actual_end_time->format('H:i:s') : 'En progreso',
                     'duracion' => $duracion,
-                    'overtime' => $break->overtime ? round($break->overtime / 60, 2) : 0,
+                    'overtime' => $break->overtime ? round($break->overtime) : 0,
                     'estado' => $break->isOngoing() ? 'En progreso' : 'Finalizado'
                 ];
             });
@@ -80,10 +80,10 @@ class GestionBreaksController extends Controller
                     ? $break->actual_end_time->diffInMinutes($break->start_time)
                     : Carbon::now()->diffInMinutes($break->start_time);
             }),
-            'total_overtime' => $breaks->sum('overtime') / 60, // en minutos
+            'total_overtime' => $breaks->sum('overtime'), // en minutos
             'mas_overtime' => $masOvertime ? [
                 'usuario' => $masOvertime->user->name,
-                'overtime' => round($masOvertime->overtime / 60, 2)
+                'overtime' => round($masOvertime->overtime)
             ] : null,
         ];
     }

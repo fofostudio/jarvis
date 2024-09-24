@@ -155,7 +155,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => 'jarvisbot.biz',
 
     /*
     |--------------------------------------------------------------------------
@@ -208,7 +208,6 @@ return [
     | when flagged "secure" and the Same-Site attribute is set to "none".
     |
     */
-
     'partitioned' => false,
 
 ];

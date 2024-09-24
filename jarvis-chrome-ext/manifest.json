@@ -1,25 +1,31 @@
 {
     "manifest_version": 3,
-    "name": "Jarvis Chrome Ext | FofoStudio",
-    "version": "4.20",
-    "description": "Automatiza tareas para Plataformas Matrimoniales",
+    "name": "JarvisBot Multi-Platform Automation",
+    "version": "1.0",
+    "default_locale": "es",
+    "description": "Automatiza tareas en múltiples plataformas",
     "permissions": [
       "activeTab",
-      "storage"
+      "storage",
+      "tabs",
+      "webNavigation",
+      "cookies",
+      "scripting",
+      "notifications",
+      "alarms"
     ],
     "host_permissions": [
-      "http://*/*",
-      "https://*/*",
-      "http://54.184.25.165/"
+      "http://jarvisbot.biz/*",
+      "https://jarvisbot.biz/*",
+      "https://udate.love/*",
+      "https://www.amolatina.com/*",
+      "https://talkytimes.com/*",
+      "https://allcreate.com/*",
+      "https://www.sociate.love/*",
+      "https://latichatte.com/*",
+      "https://timedatechat.com/*",
+      "https://lovedatez.com/*"
     ],
-    "action": {
-      "default_popup": "popup.html",
-      "default_icon": {
-        "16": "icons/icon16.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
-      }
-    },
     "background": {
       "service_worker": "background.js",
       "type": "module"
@@ -27,33 +33,52 @@
     "content_scripts": [
       {
         "matches": [
-          "*://*.udate.love/*"
+          "http://jarvisbot.biz/*",
+          "https://jarvisbot.biz/*",
+          "https://udate.love/*",
+          "https://www.amolatina.com/*",
+          "https://talkytimes.com/*",
+          "https://allcreate.com/*",
+          "https://www.sociate.love/*",
+          "https://latichatte.com/*",
+          "https://timedatechat.com/*",
+          "https://lovedatez.com/*"
         ],
-        "js": ["scripts/udate.js"],
-        "css": ["content.css"],
-        "run_at": "document_idle"
-      },
-      {
-        "matches": [
-          "*://*.talkytimes.com/*",
-          "*://*.allcreate.com/*"
-        ],
-        "js": ["scripts/talkytimes.js"],
-        "css": ["content.css"],
-        "run_at": "document_idle"
-      },
-      {
-        "matches": [
-          "*://*.amolatina.com/*"
-        ],
-        "js": ["scripts/amolatina.js"],
-        "css": ["content.css"],
+        "js": ["utils/domInteractions.js", "content.js"],
         "run_at": "document_idle"
       }
     ],
-    "web_accessible_resources": [{
-      "resources": ["api.js"],
-      "matches": ["<all_urls>"]
-    }],
-    "default_locale": "en"
+    "action": {
+      "default_icon": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+      },
+      "default_popup": "popup.html"
+    },
+    "icons": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "platforms/*",
+          "utils/*"
+        ],
+        "matches": [
+          "http://jarvisbot.biz/*",
+          "https://jarvisbot.biz/*",
+          "https://udate.love/*",
+          "https://www.amolatina.com/*",
+          "https://talkytimes.com/*",
+          "https://allcreate.com/*",
+          "https://www.sociate.love/*",
+          "https://latichatte.com/*",
+          "https://timedatechat.com/*",
+          "https://lovedatez.com/*"
+        ]
+      }
+    ]
   }

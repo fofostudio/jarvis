@@ -20,4 +20,9 @@ class Sale extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function responsibleUser()
+    {
+        return $this->belongsTo(User::class, 'responsible_id');
+    }
+
 }

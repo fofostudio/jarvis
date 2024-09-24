@@ -9,6 +9,16 @@ return [
     'settings' => 'Configuracion',
     'my_foodItems' => 'Tienda/Cooperativa',
     'FoodItems'  => 'Tienda//Cooperativa',
+    'foodProducts'  => 'Mis Productos',
+    'foodCategories'  => 'Categorias Productos',
+    'Ventas'  => 'Ventas',
+    'foodReports'  => 'Reportes e Informes',
+    'interesLinks'  => 'Diccionario Links',
+    'registerSale'  => 'Registrar Venta',
+    'registerAbono'  => 'Registrar Abono',
+    'abonos'  => 'Abonos',
+
 
 
 ];
+

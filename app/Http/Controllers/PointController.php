@@ -125,6 +125,8 @@ class PointController extends Controller
 
         $preview = [];
         $allOperators = User::where('role', 'operator')->orderBy('name')->get();
+        $totalPoints = 0;
+        $totalGoal = 0;
 
         foreach ($lines as $line) {
             $data = str_getcsv($line);
@@ -153,9 +155,12 @@ class PointController extends Controller
                     return ['id' => $operator->id, 'name' => $operator->name];
                 }),
             ];
+
+            $totalPoints += $points;
+            $totalGoal += $goal;
         }
 
-        return response()->json(['success' => true, 'preview' => $preview]);
+        return response()->json(['success' => true, 'preview' => $preview, 'totalPoints' => $totalPoints, 'totalGoal' => $totalGoal]);
     }
 
     public function store(Request $request)
@@ -183,6 +188,8 @@ class PointController extends Controller
             $points = $request->input('points');
             $goals = $request->input('goals');
             $operators = $request->input('operators');
+            $totalPoints = 0;
+            $totalGoal = 0;
 
             foreach ($points as $groupId => $pointValue) {
                 Point::create([
@@ -193,6 +200,8 @@ class PointController extends Controller
                     'points' => $pointValue,
                     'goal' => $goals[$groupId],
                 ]);
+                $totalPoints += $pointValue;
+                $totalGoal += $goals[$groupId];
             }
 
             DB::commit();
@@ -200,7 +209,9 @@ class PointController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Points saved successfully.',
-                'redirect' => route('points.index')
+                'redirect' => route('points.index'),
+                'totalPoints' => $totalPoints,
+                'totalGoal' => $totalGoal
             ]);
         } catch (\Exception $e) {
             DB::rollback();
@@ -225,22 +236,23 @@ class PointController extends Controller
     public function edit(Point $point)
     {
         $users = User::where('role', 'operator')->get();
-        $groups = Group::all();
-        return view('points.edit', compact('point', 'users', 'groups'));
+        return view('points.edit', compact('point', 'users'));
     }
 
     public function update(Request $request, Point $point)
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'group_id' => 'required|exists:groups,id',
-            'shift' => 'required|in:morning,afternoon,night',
-            'date' => 'required|date',
             'points' => 'required|integer',
-            'goal' => 'required|integer',
         ]);
 
         $point->update($validated);
+
+        if ($request->ajax()) {
+            $points = Point::whereDate('date', $point->date)->get();
+            $records = view('points.records', compact('points'))->render();
+            return response()->json(['success' => true, 'records' => $records]);
+        }
 
         return redirect()->route('points.index')->with('success', 'Points updated successfully.');
     }

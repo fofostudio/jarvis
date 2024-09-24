@@ -14,7 +14,7 @@ return [
     'allowed_origins' => [
         'chrome-extension://*',
         'http://localhost:8080', // Si estás usando un servidor de desarrollo local
-        'http://jarvisl.test'    // Tu dominio de desarrollo
+        'https://jarvisbot.biz'    // Tu dominio de desarrollo
     ],
 
     'allowed_origins_patterns' => [],

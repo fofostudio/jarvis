@@ -38,7 +38,14 @@
                                 <tbody>
                                     @forelse ($users as $user)
                                         <tr>
-                                            <td>{{ $user->name }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="{{ $user->avatar ? asset('storage/' . $user->avatar) : asset('images/default-avatar.png') }}"
+                                                        alt="{{ $user->name }}'s Avatar" class="rounded-circle me-2"
+                                                        style="width: 40px; height: 40px; object-fit: cover;">
+                                                    <span>{{ $user->name }}</span>
+                                                </div>
+                                            </td>
                                             <td>{{ $user->email }}</td>
                                             <td>{{ $user->role }}</td>
                                             <td>
@@ -93,16 +100,17 @@
     </div>
 @endsection
 @section('javascript')
-<script>
-    $(document).ready(function() {
-        $('#users-table').DataTable({
-            "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.11.3/i18n/es_es.json"
-            },
-            "lengthMenu": [30, 50, 500],  // Agrega las opciones de filtro de registros
-            "order": [[0, "asc"]] // Ordena la tabla por la primera columna por defecto (puedes cambiar el índice según tu necesidad)
+    <script>
+        $(document).ready(function() {
+            $('#users-table').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.11.3/i18n/es_es.json"
+                },
+                "lengthMenu": [30, 50, 500], // Agrega las opciones de filtro de registros
+                "order": [
+                    [0, "asc"]
+                ] // Ordena la tabla por la primera columna por defecto (puedes cambiar el índice según tu necesidad)
+            });
         });
-    });
-</script>
-
+    </script>
 @endsection

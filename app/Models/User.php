@@ -13,11 +13,22 @@ class User extends Authenticatable implements JWTSubject
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'avatar', 'identification', 'birth_date', 'phone', 'address', 'neighborhood', 'entry_date'
+        'name',
+        'email',
+        'password',
+        'role',
+        'avatar',
+        'identification',
+        'birth_date',
+        'phone',
+        'address',
+        'neighborhood',
+        'entry_date'
     ];
 
     protected $hidden = [
-        'password', 'remember_token',
+        'password',
+        'remember_token',
     ];
 
     protected $casts = [
@@ -62,6 +73,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(GroupOperator::class);
     }
+    public function salesAsResponsible()
+    {
+        return $this->hasMany(Sale::class, 'responsible_id');
+    }
 
     public function platforms()
     {
@@ -89,6 +104,16 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
-
-
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+    public function operatorBalance()
+    {
+        return $this->hasOne(OperatorBalance::class);
+    }
 }

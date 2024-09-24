@@ -216,6 +216,27 @@ return [
     'next_week'=> 'Semana Siguiente',
     'asistencia_registro'=> 'Registro Asistencia',
     'registro_break'=> 'Registros Break',
+    'my_foodItems'=> 'Mis Compras',
+    'linksManagement'=> 'Gestion Links Interes',
+    'CatManagement'=> 'Gestion Categorias Links ',
+    'SAfoodSales'=> 'Ventas de Tienda',
+    'categories'=> 'Gestion Categorias Grupos',
+    'inactive_operators'=> 'Usuarios Desactivados',
+    'hide_inactive_operators'=> 'Esconder Usuarios Desactivados',
+    'default_password_info' => 'La contraseña predeterminada para este usuario será: :password',
+    'personal_information' => 'Informacion Personal',
+    'contact_information' => 'Informacion de Contacto',
+    'account_information' => 'Informacion Acceso a Jarvis',
+    'reset_password' => 'Restablecer Contraseña',
+    'birth_date' => 'Fecha Nacimiento',
+    'DeudasOperadoresCoperativa' => 'Deudas Operadores',
+    'ranking' => 'Ranking Operadores',
+
+
+
+
+
+
 
 
 

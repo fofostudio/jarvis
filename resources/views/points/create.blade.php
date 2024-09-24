@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <div class="container">
         <h2 class="mb-4">{{ __('admin.create_points') }}</h2>
 
@@ -23,14 +23,14 @@
             </div>
             <div class="mb-3">
                 <label for="date" class="form-label">{{ __('admin.date') }}</label>
-                <input type="date" class="form-control" id="date" name="date" value="{{ date('Y-m-d') }}"
-                    required>
+                <input type="date" class="form-control" id="date" name="date" value="{{ date('Y-m-d') }}" required>
             </div>
             <button type="submit" class="btn btn-dark">{{ __('admin.upload_and_preview') }}</button>
         </form>
 
         <div id="previewContainer" class="mt-4" style="display: none;">
             <h3>{{ __('admin.preview_and_edit') }}</h3>
+
             <form id="pointsForm" action="{{ route('points.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="shift" id="hiddenShift">
@@ -45,8 +45,24 @@
                         </tr>
                     </thead>
                     <tbody id="previewTableBody">
+                        <!-- Table rows will be dynamically inserted here -->
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td>
+                                <strong>{{ __('admin.total_points') }}:</strong>
+                                <span id="totalPointsDisplay"></span>
+                            </td>
+                            <td>
+                                <strong>{{ __('admin.total_goal') }}:</strong>
+                                <span id="totalGoalDisplay"></span>
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
+
                 <button type="submit" class="btn btn-success">{{ __('admin.save_points') }}</button>
             </form>
         </div>
@@ -84,73 +100,104 @@
                 });
 
                 fetch('{{ route('points.preview') }}', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        // Close loading alert
-                        Swal.close();
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Close loading alert
+                    Swal.close();
 
-                        // Re-enable inputs
-                        fileInput.disabled = false;
-                        shiftInput.disabled = false;
-                        dateInput.disabled = false;
+                    // Re-enable inputs
+                    fileInput.disabled = false;
+                    shiftInput.disabled = false;
+                    dateInput.disabled = false;
 
-                        if (data.success) {
-                            previewTableBody.innerHTML = '';
-                            data.preview.forEach(item => {
-                                const row = `
-                        <tr>
-                            <td>${item.group}</td>
-                            <td>
-                                <select name="operators[${item.group_id}]" class="form-select">
-                                    ${item.operators.map(op => `<option value="${op.id}" ${op.id === item.assigned_operator_id ? 'selected' : ''}>${op.name}</option>`).join('')}
-                                </select>
-                            </td>
-                            <td><input type="number" name="points[${item.group_id}]" value="${item.points}" class="form-control" required></td>
-                            <td><input type="number" name="goals[${item.group_id}]" value="${item.goal}" class="form-control" required></td>
-                        </tr>
-                    `;
-                                previewTableBody.insertAdjacentHTML('beforeend', row);
-                            });
-                            hiddenShift.value = shiftInput.value;
-                            hiddenDate.value = dateInput.value;
-                            previewContainer.style.display = 'block';
+                    if (data.success) {
+                        previewTableBody.innerHTML = '';
+                        let totalPoints = 0;
+                        let totalGoal = 0;
 
-                            // Show success message
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Se ha Cargado el Punto',
-                                showConfirmButton: false,
-                                timer: 1500
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: data.message
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
+                        data.preview.forEach(item => {
+                            const row = `
+                                <tr>
+                                    <td>${item.group}</td>
+                                    <td>
+                                        <select name="operators[${item.group_id}]" class="form-select">
+                                            ${item.operators.map(op => `<option value="${op.id}" ${op.id === item.assigned_operator_id ? 'selected' : ''}>${op.name}</option>`).join('')}
+                                        </select>
+                                    </td>
+                                    <td><input type="number" name="points[${item.group_id}]" value="${item.points}" class="form-control points-input" required></td>
+                                    <td><input type="number" name="goals[${item.group_id}]" value="${item.goal}" class="form-control goal-input" required></td>
+                                </tr>
+                            `;
+                            previewTableBody.insertAdjacentHTML('beforeend', row);
+                            totalPoints += parseFloat(item.points) || 0;
+                            totalGoal += parseFloat(item.goal) || 0;
+                        });
 
-                        // Re-enable inputs
-                        fileInput.disabled = false;
-                        shiftInput.disabled = false;
-                        dateInput.disabled = false;
+                        hiddenShift.value = shiftInput.value;
+                        hiddenDate.value = dateInput.value;
+                        previewContainer.style.display = 'block';
 
+                        // Update total displays
+                        document.getElementById('totalPointsDisplay').textContent = totalPoints.toFixed(2);
+                        document.getElementById('totalGoalDisplay').textContent = totalGoal.toFixed(2);
+
+                        // Add event listeners to update totals on input change
+                        document.querySelectorAll('.points-input, .goal-input').forEach(input => {
+                            input.addEventListener('input', updateTotals);
+                        });
+
+                        // Show success message
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Se ha Cargado el Punto',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'Ocurrió un error al procesar el archivo.'
+                            text: data.message
                         });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+
+                    // Re-enable inputs
+                    fileInput.disabled = false;
+                    shiftInput.disabled = false;
+                    dateInput.disabled = false;
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Ocurrió un error al procesar el archivo.'
                     });
+                });
             });
+
+            function updateTotals() {
+                let totalPoints = 0;
+                let totalGoal = 0;
+
+                document.querySelectorAll('.points-input').forEach(input => {
+                    totalPoints += parseFloat(input.value) || 0;
+                });
+
+                document.querySelectorAll('.goal-input').forEach(input => {
+                    totalGoal += parseFloat(input.value) || 0;
+                });
+
+                document.getElementById('totalPointsDisplay').textContent = totalPoints.toFixed(2);
+                document.getElementById('totalGoalDisplay').textContent = totalGoal.toFixed(2);
+            }
 
             pointsForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -166,41 +213,42 @@
                 });
 
                 fetch(this.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        Swal.close();
-                        if (data.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Puntos guardados exitosamente',
-                                showConfirmButton: false,
-                                timer: 1500
-                            }).then(() => {
-                                window.location.href = data.redirect;
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: data.message || 'Ocurrió un error al guardar los puntos.'
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    Swal.close();
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Puntos guardados exitosamente',
+                            html: `Total Points: ${data.totalPoints}<br>Total Goal: ${data.totalGoal}`,
+                            showConfirmButton: false,
+                            timer: 2500
+                        }).then(() => {
+                            window.location.href = data.redirect;
+                        });
+                    } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'Ocurrió un error al guardar los puntos.'
+                            text: data.message || 'Ocurrió un error al guardar los puntos.'
                         });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Ocurrió un error al guardar los puntos.'
                     });
+                });
             });
         });
     </script>

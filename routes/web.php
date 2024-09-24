@@ -8,12 +8,16 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AutomatedTaskController;
 use App\Http\Controllers\BreakController;
+use App\Http\Controllers\CategoryLinkController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DictionaryController;
 use App\Http\Controllers\FoodAdminController;
 use App\Http\Controllers\GestionBreaksController;
 use App\Http\Controllers\GirlController;
+use App\Http\Controllers\GroupCategoryController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\GroupOperatorController;
+use App\Http\Controllers\LinkController;
 use App\Http\Controllers\OperativeReportController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\PlatformController;
@@ -35,6 +39,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+
     Route::post('/admin/close-operator-session', [SessionLogController::class, 'closeOperatorSession'])->name('admin.close-operator-session');
     Route::get('/gestion-breaks', [GestionBreaksController::class, 'index'])
         ->name('admin.gestion-breaks');
@@ -87,8 +92,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/sales/create', [FoodAdminController::class, 'createSale'])->name('foodAdmin.createSale');
         Route::post('/sales', [FoodAdminController::class, 'storeSale'])->name('foodAdmin.storeSale');
 
+        Route::get('/payments', [FoodAdminController::class, 'showPayments'])->name('foodAdmin.payments');
+        Route::get('/payments/create', [FoodAdminController::class, 'createPayment'])->name('foodAdmin.createPayment');
+        Route::post('/payments', [FoodAdminController::class, 'storePayment'])->name('foodAdmin.storePayment');
+
         Route::get('/sales-report', [FoodAdminController::class, 'showSalesReport'])->name('foodAdmin.salesReport');
     });
+    Route::get('/operator/my-shopitems', [FoodAdminController::class, 'myShopItems'])->name('operator.myShopItems');
+    Route::get('/foodAdmin/categories', [FoodAdminController::class, 'categoryIndex'])->name('foodAdmin.categories.index');
+    Route::get('/foodAdmin/categories/create', [FoodAdminController::class, 'categoryCreate'])->name('foodAdmin.categories.create');
+    Route::post('/foodAdmin/categories', [FoodAdminController::class, 'categoryStore'])->name('foodAdmin.categories.store');
+    Route::get('/foodAdmin/categories/{category}/edit', [FoodAdminController::class, 'categoryEdit'])->name('foodAdmin.categories.edit');
+    Route::put('/foodAdmin/categories/{category}', [FoodAdminController::class, 'categoryUpdate'])->name('foodAdmin.categories.update');
+    Route::delete('/foodAdmin/categories/{category}', [FoodAdminController::class, 'categoryDestroy'])->name('foodAdmin.categories.destroy');
     Route::group(['prefix' => 'operative-reports', 'as' => 'operative-reports.'], function () {
         // GET /operative-reports (index)
         Route::post('/', [OperativeReportController::class, 'store'])->name('store');
@@ -113,6 +129,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('products', ProductController::class);
     Route::resource('foodAdmin', FoodAdminController::class);
     Route::resource('sales', SaleController::class);
+    Route::resource('category_links', CategoryLinkController::class);
+    Route::resource('links', LinkController::class);
+    Route::get('/dictionary', [DictionaryController::class, 'index'])->name('dictionary.index');
 });
 
 Route::middleware(['auth', 'admin.access'])->group(function () {
@@ -121,7 +140,7 @@ Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::get('/girls/search', [GirlController::class, 'search'])->name('girls.search');
     Route::resource('groups', GroupController::class);
     Route::resource('users', UserController::class);
-
+    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
     Route::get('users-admin', [UserController::class, 'indexadmin'])->name('admin.users');
     Route::get('users-admin/create', [UserController::class, 'createadmin'])->name('admin.users.create');
     Route::post('users-admin', [UserController::class, 'storeadmin'])->name('admin.users.store');
@@ -129,7 +148,8 @@ Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::get('users-admin/{user}/edit', [UserController::class, 'editadmin'])->name('admin.users.edit');
     Route::put('users-admin/{user}', [UserController::class, 'updateadmin'])->name('admin.users.update');
     Route::delete('users-admin/{user}', [UserController::class, 'destroyadmin'])->name('admin.users.destroy');
-
+    Route::resource('group-categories', GroupCategoryController::class);
+    Route::get('group-categories/{groupCategory}/points', [GroupCategoryController::class, 'showPoints'])->name('group-categories.points');
     Route::resource('group_operator', GroupOperatorController::class);
     Route::resource('points', PointController::class);
     Route::get('/admin-operative-reports', [AdminOperativeReportController::class, 'index'])->name('operative-reports.index');
@@ -151,7 +171,9 @@ Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::get('/task', [PointController::class, 'index'])->name('automatized_task.index');
     Route::get('/permissions', [PointController::class, 'index'])->name('permissions_and_roles.index');
     Route::get('/jarvis-settings', [PointController::class, 'index'])->name('settings_jarvis.index');
+
     Route::get('/safood', [PointController::class, 'index'])->name('SAfoodProducts.index');
+    Route::get('/safoodsales', [PointController::class, 'index'])->name('SAfoodSales.index');
 
     Route::get('/assign-operators', [GroupController::class, 'assignOperatorsForm'])->name('groups.assign-operators-form');
     Route::post('/assign-operators', [GroupController::class, 'assignOperators'])->name('groups.assign-operators');

@@ -1,176 +1,96 @@
-import API from '/api.js';
-import * as UDate from './scripts/udate.js';
-import * as TalkyTimes from './scripts/talkytimes.js';
-import * as GroveSecret from './scripts/grovesecret.js';
-import * as AmoLatina from './scripts/amolatina.js';
+// popup.js
 
 document.addEventListener('DOMContentLoaded', function() {
-    const loginForm = document.getElementById('loginForm');
-    const userInfo = document.getElementById('userInfo');
-    const taskButtons = document.getElementById('taskButtons');
-    const status = document.getElementById('status');
-    const loggedInUser = document.getElementById('loggedInUser');
-    const userGroups = document.getElementById('userGroups');
-    const userPlatforms = document.getElementById('userPlatforms');
-    const loginButton = document.getElementById('loginButton');
-    const logoutButton = document.getElementById('logoutButton');
+    const userInfoDiv = document.getElementById('userInfo');
+    const taskListDiv = document.getElementById('taskList');
+    const statusDiv = document.getElementById('status');
+    const refreshButton = document.getElementById('refreshSession');
 
-    function updateUI(isLoggedIn, userData = null) {
-        loginForm.style.display = isLoggedIn ? 'none' : 'block';
-        userInfo.style.display = isLoggedIn ? 'block' : 'none';
-        taskButtons.style.display = isLoggedIn ? 'block' : 'none';
-
-        if (isLoggedIn && userData) {
-            loggedInUser.textContent = userData.name;
-
-            if (userGroups && userData.groups) {
-                userGroups.innerHTML = '<strong>Grupo:</strong> ' + userData.groups.map(g => `${g.name} <br/> Chicas Asignadas: (${g.girls_count})`).join(', ');
+    // Cargar información del usuario
+    function loadUserInfo() {
+        chrome.runtime.sendMessage({action: 'getUserInfo'}, function(response) {
+            if (response.userInfo) {
+                displayUserInfo(response.userInfo);
+                loadTasks(response.userInfo.platform);
             } else {
-                console.warn('Element with id "userGroups" not found in the DOM or userData.groups is undefined');
-            }
-
-            if (userPlatforms && userData.platforms) {
-                userPlatforms.innerHTML = '<strong>Platforma:</strong> ' + userData.platforms.map(p => p.name).join(', ');
-            } else {
-                console.warn('Element with id "userPlatforms" not found in the DOM or userData.platforms is undefined');
-            }
-
-            loadTasks();
-        }
-    }
-
-    async function checkLoginStatus() {
-        const { token, user, groups, platforms } = await chrome.storage.local.get(['token', 'user', 'groups', 'platforms']);
-        if (token && user) {
-            updateUI(true, { ...user, groups, platforms });
-        }
-    }
-
-    checkLoginStatus();
-
-    loginButton.addEventListener('click', async function() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        status.textContent = 'Ingresando...';
-        const result = await API.login(email, password);
-
-        if (result.success) {
-            updateUI(true, result.user);
-            status.textContent = 'Ingreso exitoso';
-            chrome.runtime.sendMessage({ action: 'startTokenRefresh' });
-        } else {
-            status.textContent = 'Error Ingreso: ' + result.error;
-        }
-    });
-
-    logoutButton.addEventListener('click', async function() {
-        const result = await API.logout();
-        if (result.success) {
-            updateUI(false);
-            status.textContent = 'Saliste Correctamente';
-            chrome.runtime.sendMessage({ action: 'stopTokenRefresh' });
-        } else {
-            status.textContent = 'Error: ' + result.error;
-        }
-    });
-
-    function loadTasks() {
-        chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
-            const currentUrl = tabs[0].url;
-            let tasks;
-
-            if (currentUrl.includes('udate.love')) {
-                tasks = [
-                    { name: 'Auto Like y Fav', action: UDate.autoLikeAndFav },
-                    { name: 'Likes Fav Genericos', action: UDate.autoFavorite },
-                    { name: 'Mensajes Chat Automaticos', action: UDate.autoChatMessages },
-                    { name: 'Mensajes Mail Automaticos', action: UDate.autoMailMessages },
-                    { name: 'Mensajes Mail Con Foto Aut.', action: UDate.autoMailMessagesWithPhoto },
-                    { name: 'Verficiar Icebreaker', action: UDate.verifyIcebreaker },
-                    { name: 'Activar Storie', action: UDate.activateStories }
-                ];
-            } else if (currentUrl.includes('talkytimes.com') || currentUrl.includes('allcreate.com')) {
-                tasks = [
-                    { name: 'Auto Favorito', action: TalkyTimes.autoFavorite },
-                    { name: 'Auto Chat Messages', action: TalkyTimes.autoChatMessages }
-                ];
-            } else if (currentUrl.includes('grovesecret.com')) {
-                tasks = [
-                    { name: 'Auto Favorite', action: GroveSecret.autoFavorite },
-                    { name: 'Auto Chat Messages', action: GroveSecret.autoChatMessages }
-                ];
-            } else if (currentUrl.includes('amolatina.com')) {
-                tasks = [
-                    { name: 'Auto Chat Messages', action: AmoLatina.autoChatMessages }
-                ];
-            }
-
-            if (tasks) {
-                taskButtons.innerHTML = '';
-                tasks.forEach(task => {
-                    const button = document.createElement('button');
-                    button.textContent = task.name;
-                    button.className = 'task-button';
-                    button.addEventListener('click', async function() {
-                        await startTask(task.name, getCurrentPlatform(currentUrl), tabs[0].id);
-                    });
-                    taskButtons.appendChild(button);
-                });
-            } else {
-                taskButtons.innerHTML = '<p>No hay tareas disponibles para esta página.</p>';
+                userInfoDiv.textContent = 'No se ha encontrado información del usuario. Por favor, inicia sesión en JarvisBot.';
             }
         });
     }
 
-    async function startTask(taskName, platform, tabId) {
-        status.textContent = `Iniciando ${taskName}...`;
-        try {
-            if (!platform || platform === 'Unknown') {
-                throw new Error('Esta tarea solo se puede ejecutar en una página de plataforma soportada');
-            }
-
-            const result = await chrome.runtime.sendMessage({
-                action: 'startTask',
-                taskName: taskName,
-                platform: platform,
-                tabId: tabId
-            });
-
-            console.log('Respuesta del background script:', result);
-            if (result && typeof result.success === 'boolean') {
-                if (result.success) {
-                    status.textContent = `${taskName} iniciada. ${result.message || ''}`;
-                } else {
-                    status.textContent = `Error al iniciar ${taskName}: ${result.error || 'Error desconocido'}`;
-                }
-            } else {
-                throw new Error('Respuesta inesperada del background script');
-            }
-        } catch (error) {
-            console.error(`Error al iniciar tarea ${taskName}:`, error);
-            status.textContent = `Error al iniciar ${taskName}: ${error.message}`;
-        }
+    // Mostrar información del usuario
+    function displayUserInfo(userInfo) {
+        userInfoDiv.innerHTML = `
+            <h2>Información del Usuario</h2>
+            <p>Nombre: ${userInfo.name}</p>
+            <p>Plataforma: ${userInfo.platform}</p>
+            <h3>Grupos:</h3>
+            <ul>
+                ${userInfo.groups.map(group => `
+                    <li>
+                        ${group.name} (${group.girls_count} chicas)
+                        <ul>
+                            ${group.girls.map(girl => `
+                                <li>${girl.username} - ${girl.platform}</li>
+                            `).join('')}
+                        </ul>
+                    </li>
+                `).join('')}
+            </ul>
+        `;
     }
 
-    function getCurrentPlatform(url) {
-        if (url.includes('udate.love')) return 'UDate';
-        if (url.includes('talkytimes.com') || url.includes('allcreate.com')) return 'TalkyTimes';
-        if (url.includes('grovesecret.com')) return 'GroveSecret';
-        if (url.includes('amolatina.com')) return 'AmoLatina';
-        return 'Unknown';
+    // Cargar tareas disponibles
+    function loadTasks(platform) {
+        chrome.runtime.sendMessage({action: 'getPlatformTasks', platform: platform}, function(response) {
+            if (response.tasks && response.tasks.length > 0) {
+                taskListDiv.innerHTML = '<h2>Tareas Disponibles:</h2>';
+                response.tasks.forEach(task => {
+                    const button = document.createElement('button');
+                    button.textContent = task;
+                    button.onclick = () => executeTask(platform, task);
+                    taskListDiv.appendChild(button);
+                });
+            } else {
+                taskListDiv.innerHTML = '<p>No hay tareas disponibles para esta plataforma.</p>';
+            }
+        });
     }
 
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        console.log('Mensaje recibido en popup:', message);
-        if (message.action === 'taskProgress') {
-            status.textContent = `Progreso de ${message.taskName}: ${message.progress.toFixed(2)}%`;
-        } else if (message.action === 'taskComplete') {
-            if (message.result.success) {
-                status.textContent = `Tarea ${message.taskName} completada: ${message.result.message}`;
+    // Ejecutar tarea
+    function executeTask(platform, taskName) {
+        statusDiv.textContent = `Ejecutando tarea: ${taskName}...`;
+        chrome.runtime.sendMessage({
+            action: 'executeTask',
+            task: { platform: platform, name: taskName }
+        }, function(response) {
+            if (response.success) {
+                statusDiv.textContent = `Tarea ${taskName} añadida a la cola.`;
             } else {
-                status.textContent = `Error en tarea ${message.taskName}: ${message.result.error}`;
+                statusDiv.textContent = `Error al añadir tarea: ${response.error}`;
             }
+        });
+    }
+
+    // Actualizar sesión
+    refreshButton.addEventListener('click', function() {
+        statusDiv.textContent = 'Actualizando sesión...';
+        chrome.runtime.sendMessage({action: 'checkSession'}, function(response) {
+            statusDiv.textContent = 'Sesión actualizada.';
+            loadUserInfo();
+        });
+    });
+
+    // Listener para actualizaciones de sesión
+    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+        if (request.action === 'sessionUpdated') {
+            loadUserInfo();
+        } else if (request.action === 'sessionCleared') {
+            userInfoDiv.textContent = 'Sesión cerrada. Por favor, inicia sesión en JarvisBot.';
+            taskListDiv.innerHTML = '';
         }
     });
+
+    // Cargar información inicial
+    loadUserInfo();
 });
