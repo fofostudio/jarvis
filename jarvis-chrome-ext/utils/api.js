@@ -99,12 +99,12 @@ export async function clearUserSession() {
     try {
         await chrome.runtime.sendMessage({ action: "sessionCleared" });
     } catch (error) {
-        console.warn("No se pudo enviar el mensaje de sesión limpiada:", error);
+        console.log("No hay receptor para el mensaje de sesión limpiada");
     }
     console.log("Sesión del usuario limpiada");
 }
 
-export async function refreshToken() {
+export async function refreshToken(retries = 3) {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
             method: "POST",
@@ -115,11 +115,17 @@ export async function refreshToken() {
         });
 
         if (!response.ok) {
+            if (response.status === 500 && retries > 0) {
+                console.log(`Error del servidor al refrescar el token. Reintentando... (${retries} intentos restantes)`);
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Espera 2 segundos
+                return refreshToken(retries - 1);
+            }
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
         if (data.success && data.token) {
+            await chrome.storage.local.set({ jwtToken: data.token });
             return data.token;
         } else {
             throw new Error("No se recibió un nuevo token");
@@ -129,6 +135,7 @@ export async function refreshToken() {
         throw error;
     }
 }
+
 export async function checkAndRefreshToken() {
     try {
         const token = await getJwtToken();
@@ -149,7 +156,6 @@ export async function checkAndRefreshToken() {
         console.log("Error al validar token, intentando refrescar");
         try {
             const newToken = await refreshToken();
-            await chrome.storage.local.set({ jwtToken: newToken });
             return newToken;
         } catch (refreshError) {
             console.error("Error al refrescar token:", refreshError);
@@ -157,4 +163,13 @@ export async function checkAndRefreshToken() {
             throw new Error("No se pudo refrescar el token");
         }
     }
+}
+
+export async function attemptAutoLogin() {
+    const cookieToken = await getJwtTokenFromCookie();
+    if (cookieToken) {
+        await chrome.storage.local.set({ jwtToken: cookieToken });
+        return true;
+    }
+    return false;
 }

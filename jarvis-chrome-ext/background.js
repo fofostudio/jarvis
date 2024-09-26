@@ -5,10 +5,16 @@ import {
     fetchFromApi,
     clearUserSession,
     checkAndRefreshToken,
+    attemptAutoLogin,
 } from "./utils/api.js";
 
-async function initializeSession() {
+async function initializeSession(retries = 3) {
     try {
+        const autoLoginSuccessful = await attemptAutoLogin();
+        if (autoLoginSuccessful) {
+            console.log('Auto-login exitoso');
+        }
+
         const token = await checkAndRefreshToken();
         if (!token) {
             console.log("No se pudo obtener un token JWT válido");
@@ -26,13 +32,14 @@ async function initializeSession() {
         }
     } catch (error) {
         console.error("Error al inicializar la sesión:", error);
-        if (
-            error.message === "Sesión expirada" ||
-            error.message === "No se encontró token JWT"
-        ) {
+        if (retries > 0) {
+            console.log(`Reintentando inicialización de sesión... (${retries} intentos restantes)`);
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Espera 5 segundos
+            return initializeSession(retries - 1);
+        } else {
             await clearUserSession();
+            return null;
         }
-        return null;
     }
 }
 
