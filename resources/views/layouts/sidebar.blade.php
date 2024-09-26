@@ -11,6 +11,18 @@
         </a>
     </li>
     <li class="nav-item">
+        <a href="{{ route('operator.myShopItems') }}"
+            class="nav-link text-truncate @if (request()->routeIs('operator.Messages')) active @endif">
+            <i class="bi bi-chat-dots me-2"></i> {{ __('operator.MessagesChat') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('operator.myShopItems') }}"
+            class="nav-link text-truncate @if (request()->routeIs('operator.Messages')) active @endif">
+            <i class="bi bi-envelope me-2"></i> {{ __('operator.CorporativeMail') }}
+        </a>
+    </li>
+    <li class="nav-item">
         <a href="{{ route('schedule-calendar.index') }}"
             class="nav-link text-truncate @if (request()->routeIs('schedule-calendar.index')) active @endif">
             <i class="bi bi-calendar-week me-2"></i> {{ __('admin.GestionHorarioTrabajo') }}
@@ -80,6 +92,12 @@
         <a href="{{ route('audits.index') }}"
             class="nav-link text-truncate @if (request()->routeIs('audits.*')) active @endif">
             <i class="bi bi-clipboard-check me-2"></i> {{ __('admin.audit') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('digital.index') }}"
+            class="nav-link text-truncate @if (request()->routeIs('team.*')) active @endif">
+            <i class="bi bi-file-earmark-richtext me-2"></i> {{ __('admin.TeamSection') }}
         </a>
     </li>
     <li class="nav-item">
@@ -173,13 +191,13 @@
     <li class="nav-item">
         <a href="{{ route('dashboard') }}"
             class="nav-link text-truncate @if (request()->routeIs('dashboard')) active @endif">
-            <i class="bi bi-speedometer2 me-2"></i> {{ __('admin.dashboard') }}
+            <i class="bi bi-house-door me-2"></i> {{ __('admin.dashboard') }}
         </a>
     </li>
     <li class="nav-item">
         <a href="#automatedTaskSubmenu" data-bs-toggle="collapse"
             class="nav-link text-truncate @if (request()->routeIs('automated_task*')) active @endif">
-            <i class="bi bi-robot me-2"></i> {{ __('operator.automated_task') }}
+            <i class="bi bi-gear-fill me-2"></i> {{ __('operator.automated_task') }}
             <i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul class="collapse show nav flex-column ms-1" id="automatedTaskSubmenu" data-bs-parent="#menu">
@@ -218,19 +236,19 @@
     <li class="nav-item">
         <a href="{{ route('operator.myShopItems') }}"
             class="nav-link text-truncate @if (request()->routeIs('operator.Messages')) active @endif">
-            <i class="bi bi-calendar-week me-2"></i> {{ __('operator.MessagesChat') }}
+            <i class="bi bi-chat-dots me-2"></i> {{ __('operator.MessagesChat') }}
         </a>
     </li>
     <li class="nav-item">
         <a href="{{ route('operator.myShopItems') }}"
             class="nav-link text-truncate @if (request()->routeIs('operator.Messages')) active @endif">
-            <i class="bi bi-calendar-week me-2"></i> {{ __('operator.CorporativeMail') }}
+            <i class="bi bi-envelope me-2"></i> {{ __('operator.CorporativeMail') }}
         </a>
     </li>
     <li class="nav-item">
         <a href="{{ route('my_points') }}"
             class="nav-link text-truncate @if (request()->routeIs('my_points')) active @endif">
-            <i class="bi bi-trophy me-2"></i> {{ __('operator.my_points') }}
+            <i class="bi bi-star me-2"></i> {{ __('operator.my_points') }}
         </a>
     </li>
     <li class="nav-item">
@@ -254,86 +272,110 @@
     <li class="nav-item">
         <a href="{{ route('dictionary.index') }}"
             class="nav-link text-truncate @if (request()->routeIs('dictionary.index')) active @endif">
-            <i class="bi bi-journal-text me-2"></i> {{ __('operator.interesLinks') }}
+            <i class="bi bi-link-45deg me-2"></i> {{ __('operator.interesLinks') }}
         </a>
     </li>
     <li class="nav-item">
         <a href="{{ route('operator.myShopItems') }}"
             class="nav-link text-truncate @if (request()->routeIs('operator.myShopItems')) active @endif">
-            <i class="bi bi-egg-fried me-2"></i> {{ __('operator.my_foodItems') }}
+            <i class="bi bi-cart me-2"></i> {{ __('operator.my_foodItems') }}
         </a>
     </li>
     <li class="nav-item">
         <a href="{{ route('operator.myShopItems') }}"
             class="nav-link text-truncate @if (request()->routeIs('operator.searchReports')) active @endif">
-            <i class="bi bi-calendar-week me-2"></i> {{ __('operator.searchReports') }}
+            <i class="bi bi-search me-2"></i> {{ __('operator.searchReports') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('my_work_plan') }}"
+            class="nav-link text-truncate @if (request()->routeIs('ChatWithJarvis')) active @endif">
+            <i class="bi bi-robot me-2"></i> {{ __('operator.ChatWithJarvis') }}
         </a>
     </li>
     <li class="nav-item">
         <a href="{{ route('schedule-calendar.index') }}"
             class="nav-link text-truncate @if (request()->routeIs('schedule-calendar.index')) active @endif">
-            <i class="bi bi-calendar-week me-2"></i> {{ __('operator.HorarioTrabajo') }}
+            <i class="bi bi-calendar2-week me-2"></i> {{ __('operator.HorarioTrabajo') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('my_work_plan') }}"
+            class="nav-link text-truncate @if (request()->routeIs('TempMail')) active @endif">
+            <i class="bi bi-envelope-paper me-2"></i> {{ __('operator.TempMail') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('my_work_plan') }}"
+            class="nav-link text-truncate @if (request()->routeIs('beneficiosMultas')) active @endif">
+            <i class="bi bi-cash-coin me-2"></i> {{ __('operator.beneficiosMultas') }}
         </a>
     </li>
     <li class="nav-item">
         <a href="{{ route('my_work_plan') }}"
             class="nav-link text-truncate @if (request()->routeIs('my_work_plan')) active @endif">
-            <i class="bi bi-calendar-check me-2"></i> {{ __('operator.my_work_plan') }}
+            <i class="bi bi-calendar2-check me-2"></i> {{ __('operator.my_work_plan') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('profile.edit') }}"
+            class="nav-link text-truncate @if (request()->routeIs('Support')) active @endif">
+            <i class="bi bi-person-gear me-2"></i> {{ __('operator.Support') }}
         </a>
     </li>
     <li class="nav-item">
         <a href="{{ route('profile.edit') }}"
             class="nav-link text-truncate @if (request()->routeIs('profile.edit')) active @endif">
-            <i class="bi bi-gear me-2"></i> {{ __('operator.settings') }}
+            <i class="bi bi-person-gear me-2"></i> {{ __('operator.settings') }}
         </a>
     </li>
-    @endif
-    @if (auth()->user()->role == 'coperative')
-        <li class="nav-item">
-            <a href="{{ route('foodAdmin.createSale') }}" class="nav-link btn-dark text-truncate">
-                <i class="bi bi-cart-plus me-2"></i> {{ __('operator.registerSale') }}
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('foodAdmin.sales') }}"
-                class="nav-link text-truncate @if (request()->routeIs('foodAdmin.sales')) active @endif">
-                <i class="bi bi-receipt me-2"></i> {{ __('operator.Ventas') }}
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('foodAdmin.payments') }}"
-                class="nav-link text-truncate @if (request()->routeIs('foodAdmin.payments')) active @endif">
-                <i class="bi bi-cash-coin me-2"></i> {{ __('operator.abonos') }}
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('dashboard') }}"
-                class="nav-link text-truncate @if (request()->routeIs('dashboard')) active @endif">
-                <i class="bi bi-speedometer2 me-2"></i> {{ __('admin.dashboard') }}
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('foodAdmin.index') }}"
-                class="nav-link text-truncate @if (request()->routeIs('foodAdmin.index')) active @endif">
-                <i class="bi bi-cup-hot me-2"></i> {{ __('operator.foodProducts') }}
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('foodAdmin.categories.index') }}"
-                class="nav-link text-truncate @if (request()->routeIs('foodAdmin.categories.index')) active @endif">
-                <i class="bi bi-list-ul me-2"></i> {{ __('operator.foodCategories') }}
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('foodAdmin.salesReport') }}"
-                class="nav-link text-truncate @if (request()->routeIs('foodAdmin.salesReport')) active @endif">
-                <i class="bi bi-graph-up me-2"></i> {{ __('operator.foodReports') }}
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('profile.edit') }}"
-                class="nav-link text-truncate @if (request()->routeIs('profile.edit')) active @endif">
-                <i class="bi bi-person-gear me-2"></i> {{ __('operator.settings') }}
-            </a>
-        </li>
-    @endif
+@endif
+@if (auth()->user()->role == 'coperative')
+    <li class="nav-item">
+        <a href="{{ route('foodAdmin.createSale') }}" class="nav-link btn-dark text-truncate">
+            <i class="bi bi-cart-plus me-2"></i> {{ __('operator.registerSale') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('foodAdmin.sales') }}"
+            class="nav-link text-truncate @if (request()->routeIs('foodAdmin.sales')) active @endif">
+            <i class="bi bi-receipt me-2"></i> {{ __('operator.Ventas') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('foodAdmin.payments') }}"
+            class="nav-link text-truncate @if (request()->routeIs('foodAdmin.payments')) active @endif">
+            <i class="bi bi-cash-coin me-2"></i> {{ __('operator.abonos') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('dashboard') }}"
+            class="nav-link text-truncate @if (request()->routeIs('dashboard')) active @endif">
+            <i class="bi bi-speedometer2 me-2"></i> {{ __('admin.dashboard') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('foodAdmin.index') }}"
+            class="nav-link text-truncate @if (request()->routeIs('foodAdmin.index')) active @endif">
+            <i class="bi bi-cup-hot me-2"></i> {{ __('operator.foodProducts') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('foodAdmin.categories.index') }}"
+            class="nav-link text-truncate @if (request()->routeIs('foodAdmin.categories.index')) active @endif">
+            <i class="bi bi-list-ul me-2"></i> {{ __('operator.foodCategories') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('foodAdmin.salesReport') }}"
+            class="nav-link text-truncate @if (request()->routeIs('foodAdmin.salesReport')) active @endif">
+            <i class="bi bi-graph-up me-2"></i> {{ __('operator.foodReports') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('profile.edit') }}"
+            class="nav-link text-truncate @if (request()->routeIs('profile.edit')) active @endif">
+            <i class="bi bi-person-gear me-2"></i> {{ __('operator.settings') }}
+        </a>
+    </li>
+@endif

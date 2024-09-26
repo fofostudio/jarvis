@@ -40,6 +40,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(SessionLog::class);
     }
+    public function conversations()
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_user');
+    }
 
     public function breakLogs()
     {

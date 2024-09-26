@@ -36,7 +36,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'string|min:8',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'identification' => 'required|string|max:255|unique:users',
             'birth_date' => 'date',
@@ -50,10 +50,10 @@ class UserController extends Controller
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $validated['avatar'] = $avatarPath;
         } else {
-            $validated['avatar'] = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?20150327203541';
+            $validated['avatar'] = asset('images/default-avatar.png');
         }
 
-        $validated['password'] = Hash::make($validated['password']);
+        $validated['password'] = Hash::make('TeamSic2024');
         $validated['entry_date'] = now(); // Establece la fecha de ingreso como la fecha y hora actuales
 
         User::create($validated);
@@ -72,7 +72,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'string|min:8',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'identification' => 'required|string|max:255|unique:users',
             'birth_date' => 'required|date',
@@ -85,10 +85,10 @@ class UserController extends Controller
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $validated['avatar'] = $avatarPath;
         } else {
-            $validated['avatar'] = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?20150327203541';
+            $validated['avatar'] = asset('images/default-avatar.png');
         }
 
-        $validated['password'] = Hash::make($validated['password']);
+        $validated['password'] = Hash::make('TeamSic2024');
         $validated['entry_date'] = now(); // Establece la fecha de ingreso como la fecha y hora actuales
         $validated['role'] = 'operator';
 

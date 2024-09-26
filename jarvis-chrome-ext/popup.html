@@ -1,40 +1,44 @@
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>JarvisBot Extension</title>
-        <style>
-            body {
-                width: 300px;
-                font-family: Arial, sans-serif;
-                padding: 10px;
-            }
-            h1 {
-                font-size: 18px;
-                color: #333;
-            }
-            #userInfo,
-            #taskList,
-            #status {
-                margin-bottom: 15px;
-            }
-            button {
-                width: 100%;
-                padding: 5px;
-                margin-top: 5px;
-            }
-            #status {
-                font-style: italic;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>JarvisBot Extension</h1>
-        <div id="userInfo">Cargando información del usuario...</div>
-        <div id="taskList"></div>
-        <div id="status"></div>
-        <button id="refreshSession">Actualizar Sesión</button>
-        <script src="popup.js"></script>
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JarvisBot Extension</title>
+    <style>
+        body {
+            width: 300px;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+        select, button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #userInfo {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="userInfo"></div>
+
+    <select id="girlSelect">
+        <option value="">Selecciona una chica</option>
+    </select>
+
+    <div id="taskButtons"></div>
+
+    <script src="popup.js"></script>
+</body>
 </html>

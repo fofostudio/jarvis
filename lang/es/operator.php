@@ -17,8 +17,11 @@ return [
     'registerSale'  => 'Registrar Venta',
     'registerAbono'  => 'Registrar Abono',
     'abonos'  => 'Abonos',
-
-
-
+    'MessagesChat'  => 'Chat Empresarial',
+    'CorporativeMail'  => 'Mail Corporativo',
+    'searchReports'  => 'Buscar Reportes',
+    'HorarioTrabajo'  => 'Horario de Trabajo',
+    'beneficiosMultas'  => 'Multas & Bonificaciones',
+    'TempMail'  => 'Mail Temporal',
 ];
 

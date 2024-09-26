@@ -6,6 +6,8 @@ use App\Models\GroupOperator;
 use App\Models\OperativeReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -125,8 +127,8 @@ class OperativeReportController extends Controller
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error al guardar el reporte: ' . $e->getMessage());
-            \Log::error($e->getTraceAsString());
+            Log::error('Error al guardar el reporte: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
 
             return response()->json([
                 'success' => false,

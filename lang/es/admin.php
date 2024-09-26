@@ -231,29 +231,11 @@ return [
     'birth_date' => 'Fecha Nacimiento',
     'DeudasOperadoresCoperativa' => 'Deudas Operadores',
     'ranking' => 'Ranking Operadores',
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    'GestionHorarioTrabajo' => 'Horario Trabajo',
+    'delete_confirm' => 'Seguro deseas Eliminar?',
+    'yes_confirm' => 'Si, Eliminar',
+    'cancel_confirm' => 'Espera revisemos',
+    'TeamSection' => 'Gestion de Team',
 
 
 

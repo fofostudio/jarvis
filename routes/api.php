@@ -10,6 +10,7 @@ use App\Http\Controllers\TaskResultController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Carbon\Carbon;
+use App\Http\Controllers\ChatController;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 /*
@@ -56,6 +57,13 @@ Route::post('auth/refresh', [AuthenticatedSessionController::class, 'refresh']);
 Route::get('auth/me', [AuthenticatedSessionController::class, 'me']);
 Route::get('auth/validate-token', [AuthenticatedSessionController::class, 'validateToken']);
 
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/users', [ChatController::class, 'getUsers']);
+    Route::post('/conversations', [ChatController::class, 'getOrCreateConversation']);
+    Route::get('/conversations/{conversationId}/messages', [ChatController::class, 'getMessages']);
+    Route::post('/conversations/{conversationId}/messages', [ChatController::class, 'sendMessage']);
+});
 Route::group(['middleware' => ['auth:api']], function () {
     Route::get('/group', [ExtController::class, 'loadGroup']);
     Route::get('/girls', [ExtController::class, 'loadGirls']);

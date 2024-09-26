@@ -1,119 +1,93 @@
 // popup.js
 
-document.addEventListener("DOMContentLoaded", function () {
-    const userInfoDiv = document.getElementById("userInfo");
-    const taskListDiv = document.getElementById("taskList");
-    const statusDiv = document.getElementById("status");
-    const refreshButton = document.getElementById("refreshSession");
+document.addEventListener('DOMContentLoaded', async function() {
+    const userInfo = await chrome.runtime.sendMessage({ action: 'getUserInfo' });
+    const userInfoDiv = document.getElementById('userInfo');
+    const girlSelect = document.getElementById('girlSelect');
+    const taskButtons = document.getElementById('taskButtons');
 
-    // Cargar información del usuario
-    function loadUserInfo() {
-        chrome.storage.local.get(["userInfo", "operatorInfo"], function (data) {
-            if (data.userInfo && data.operatorInfo) {
-                displayUserInfo(data.userInfo, data.operatorInfo);
-                setupTaskButtons();
-            } else {
-                displayLoginForm();
-            }
-        });
-    }
+    if (userInfo && userInfo.userInfo) {
+        displayUserInfo(userInfo.userInfo);
+        populateGirlSelect(userInfo.userInfo);
 
-    // Mostrar información del usuario
-    function displayUserInfo(userInfo) {
-        userInfoDiv.innerHTML = `
-            <h2>Información del Usuario</h2>
-            <p>Nombre: ${userInfo.name}</p>
-            <p>Plataforma: ${userInfo.platform}</p>
-            <h3>Grupos:</h3>
-            <ul>
-                ${userInfo.groups
-                    .map(
-                        (group) => `
-                    <li>
-                        ${group.name} (${group.girls_count} chicas)
-                        <ul>
-                            ${group.girls
-                                .map(
-                                    (girl) => `
-                                <li>${girl.username} - ${girl.platform}</li>
-                            `
-                                )
-                                .join("")}
-                        </ul>
-                    </li>
-                `
-                    )
-                    .join("")}
-            </ul>
-        `;
-    }
+        girlSelect.addEventListener('change', () => loadTasks(userInfo.userInfo));
 
-    // Cargar tareas disponibles
-    function loadTasks(platform) {
-        chrome.runtime.sendMessage(
-            { action: "getPlatformTasks", platform: platform },
-            function (response) {
-                if (response.tasks && response.tasks.length > 0) {
-                    taskListDiv.innerHTML = "<h2>Tareas Disponibles:</h2>";
-                    response.tasks.forEach((task) => {
-                        const button = document.createElement("button");
-                        button.textContent = task;
-                        button.onclick = () => executeTask(platform, task);
-                        taskListDiv.appendChild(button);
-                    });
-                } else {
-                    taskListDiv.innerHTML =
-                        "<p>No hay tareas disponibles para esta plataforma.</p>";
-                }
-            }
-        );
-    }
-
-    // Ejecutar tarea
-    function executeTask(platform, taskName) {
-        statusDiv.textContent = `Ejecutando tarea: ${taskName}...`;
-        chrome.runtime.sendMessage(
-            {
-                action: "executeTask",
-                task: { platform: platform, name: taskName },
-            },
-            function (response) {
-                if (response.success) {
-                    statusDiv.textContent = `Tarea ${taskName} añadida a la cola.`;
-                } else {
-                    statusDiv.textContent = `Error al añadir tarea: ${response.error}`;
-                }
-            }
-        );
-    }
-
-    // Actualizar sesión
-    refreshButton.addEventListener("click", function () {
-        statusDiv.textContent = "Actualizando sesión...";
-        chrome.runtime.sendMessage(
-            { action: "checkSession" },
-            function (response) {
-                statusDiv.textContent = "Sesión actualizada.";
-                loadUserInfo();
-            }
-        );
-    });
-
-    // Listener para actualizaciones de sesión
-    chrome.runtime.onMessage.addListener(function (
-        request,
-        sender,
-        sendResponse
-    ) {
-        if (request.action === "sessionUpdated") {
-            loadUserInfo();
-        } else if (request.action === "sessionCleared") {
-            userInfoDiv.textContent =
-                "Sesión cerrada. Por favor, inicia sesión en JarvisBot.";
-            taskListDiv.innerHTML = "";
+        const activeTab = await getCurrentTab();
+        const activePlatform = detectPlatform(activeTab.url);
+        if (activePlatform) {
+            loadTasks(userInfo.userInfo, activePlatform);
         }
-    });
+    } else {
+        userInfoDiv.innerHTML = `<p>No has iniciado sesión. Por favor, inicia sesión en el sitio web de JarvisBot.</p>`;
+    }
+});
 
-    // Cargar información inicial
-    loadUserInfo();
+function displayUserInfo(user) {
+    const userInfoDiv = document.getElementById('userInfo');
+    userInfoDiv.innerHTML = `
+        <h2>Bienvenido, ${user.name}</h2>
+        <p>Email: ${user.email}</p>
+        <p>Rol: ${user.role}</p>
+    `;
+}
+
+function populateGirlSelect(userInfo) {
+    const girlSelect = document.getElementById('girlSelect');
+    const allGirls = userInfo.groups.flatMap(group => group.girls);
+    girlSelect.innerHTML = allGirls.map(girl => `
+        <option value="${girl.id}">${girl.name} (${girl.platform})</option>
+    `).join('');
+}
+
+async function loadTasks(userInfo, platform) {
+    const taskButtons = document.getElementById('taskButtons');
+    const girlId = document.getElementById('girlSelect').value;
+    const girl = userInfo.groups.flatMap(group => group.girls).find(g => g.id.toString() === girlId);
+
+    if (!platform && girl) {
+        platform = girl.platform;
+    }
+
+    const tasks = await getTasks(platform);
+
+    taskButtons.innerHTML = tasks.map(task => `
+        <button
+            onclick="executeTask('${platform}', '${task}', ${JSON.stringify(girl)})"
+            ${girl && girl.platform === platform ? '' : 'disabled'}
+        >
+            ${task}
+        </button>
+    `).join('');
+}
+
+function executeTask(platform, task, girlData) {
+    chrome.runtime.sendMessage({ action: 'executeTask', platform, task, girlData });
+}
+
+async function getCurrentTab() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    return tab;
+}
+
+function detectPlatform(url) {
+    const platforms = ['udate', 'talkytimes', 'amolatina'];
+    return platforms.find(platform => url.includes(platform)) || null;
+}
+
+async function getTasks(platform) {
+    // En una implementación real, deberías obtener esto del backend
+    const tasks = {
+        UDate: ['Login', 'Auto Like', 'Send Message'],
+        TalkyTimes: ['Login', 'Update Profile', 'Check Messages'],
+        AmoLatina: ['Login', 'Browse Profiles', 'Send Gift']
+    };
+    return tasks[platform] || [];
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'taskCompleted') {
+        alert(`Tarea "${message.task}" completada en ${message.platform}`);
+    } else if (message.action === 'taskFailed') {
+        alert(`Error al ejecutar la tarea "${message.task}" en ${message.platform}: ${message.error}`);
+    }
 });
