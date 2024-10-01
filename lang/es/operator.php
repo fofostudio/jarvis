@@ -23,5 +23,8 @@ return [
     'HorarioTrabajo'  => 'Horario de Trabajo',
     'beneficiosMultas'  => 'Multas & Bonificaciones',
     'TempMail'  => 'Mail Temporal',
+    'my_audits'  => 'Mis Auditorias',
+    'ChatWithJarvis'  => 'Chat con Jarvis',
+    'Support'  => 'Soporte',
 ];
 

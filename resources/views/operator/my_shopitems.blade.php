@@ -2,10 +2,10 @@
 
 @section('content')
     <div class="container-fluid mt-4">
-        <h2 class="mb-4">Mi Historial de Compras</h2>
+        <h2 class="mb-4">Mi Historial de Compras y Deudas</h2>
 
         <div class="row mb-4">
-            <div class="col-md-6">
+            <div class="col-md-3">
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Total Gastado</h5>
@@ -13,11 +13,27 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-3">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Total de Artículos Comprados</h5>
+                        <h5 class="card-title">Total de Artículos</h5>
                         <p class="card-text h3">{{ $totalItems }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Deuda Total</h5>
+                        <p class="card-text h3">{{ number_format(abs($totalDebt), 0, ',', '.') }} COP</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Abonado</h5>
+                        <p class="card-text h3">{{ number_format($totalPayments, 0, ',', '.') }} COP</p>
                     </div>
                 </div>
             </div>
@@ -37,17 +53,21 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <h6>Total Ventas</h6>
                             <p>{{ number_format($stat['total_sales'], 0, ',', '.') }} COP</p>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <h6>Total Artículos</h6>
                             <p>{{ $stat['total_items'] }}</p>
                         </div>
-                        <div class="col-md-4">
-                            <h6>Deuda Total</h6>
+                        <div class="col-md-3">
+                            <h6>Deuda Actual</h6>
                             <p>{{ number_format($stat['total_debt'], 0, ',', '.') }} COP</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Total Abonado</h6>
+                            <p>{{ number_format($stat['total_payments'], 0, ',', '.') }} COP</p>
                         </div>
                     </div>
                     <div class="table-responsive mt-3">

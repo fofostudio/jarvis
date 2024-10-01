@@ -17,6 +17,7 @@ class OperatorBalance extends Model
     protected $fillable = [
         'user_id',
         'balance',
+        'responsible_id',
     ];
 
     /**
@@ -83,6 +84,10 @@ class OperatorBalance extends Model
     public static function getNonZeroBalances()
     {
         return self::where('balance', '!=', 0)->with('user')->get();
+    }
+    public function responsible()
+    {
+        return $this->belongsTo(User::class, 'responsible_id');
     }
 
     /**

@@ -127,7 +127,7 @@
                     <div class="card-header" id="inactiveOperatorsHeader">
                         <h2 class="mb-0">
                             <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse"
-                                data-target="#inactiveOperatorsCollapse" aria-expanded="false"
+                                data-target="#inactiveOperatorsCollapse" aria-expanded="true"
                                 aria-controls="inactiveOperatorsCollapse">
                                 {{ __('admin.inactive_operators') }} (<span
                                     class="inactive-count">{{ $inactiveOperators->count() }}</span>)

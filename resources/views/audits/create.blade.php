@@ -1,14 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <div class="container">
     <h1 class="mb-4">Crear Nueva Auditoría</h1>
 
-    <form action="{{ route('audits.store') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('audits.store') }}" method="POST" id="auditForm" enctype="multipart/form-data">
         @csrf
 
         <div class="row">
@@ -36,7 +32,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="platform">Plataforma</label>
-                            <select name="platform" id="platform" class="form-control" required>
+                            <select name="platform_id" id="platform_id" class="form-control" required>
                                 @foreach($platforms as $platform)
                                     <option value="{{ $platform->id }}">{{ $platform->name }}</option>
                                 @endforeach
@@ -44,7 +40,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="group">Grupo</label>
-                            <select name="group" id="group" class="form-control" required>
+                            <select name="group_id" id="group_id" class="form-control" required>
                                 @foreach($groups as $group)
                                     <option value="{{ $group->id }}">{{ $group->name }}</option>
                                 @endforeach
@@ -62,7 +58,6 @@
                             <label for="girl_name">Nombre Chica</label>
                             <input type="text" name="girl_name" id="girl_name" class="form-control" required readonly>
                         </div>
-
                     </div>
                 </div>
 
@@ -81,7 +76,11 @@
                         </div>
                         <div class="mb-3">
                             <label for="client_status">Estatus del Cliente</label>
-                            <input type="text" name="client_status" id="client_status" class="form-control" required>
+                            <select name="client_status" id="client_status" class="form-control" required>
+                                <option value="">Seleccione un estatus</option>
+                                <option value="Nuevo" {{ old('client_status', $audit->client_status ?? '') == 'Nuevo' ? 'selected' : '' }}>Nuevo</option>
+                                <option value="Antiguo" {{ old('client_status', $audit->client_status ?? '') == 'Antiguo' ? 'selected' : '' }}>Antiguo</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -93,26 +92,13 @@
                         <h5 class="mb-0">Checklist de Auditoría</h5>
                     </div>
                     <div class="card-body">
-                        @php
-                            $checklistItems = [
-                                'interesting_greetings' => 'Saludos interesantes',
-                                'conversation_flow' => 'Flujo de conversación',
-                                'new_conversation_topics' => 'Nuevos temas de conversación',
-                                'sentence_structure' => 'Estructura de frases',
-                                'generates_love_bond' => 'Genera vínculo amoroso',
-                                'moderate_gift_request' => 'Petición moderada de regalos',
-                                'material_sending' => 'Envío de material',
-                                'commits_profile' => 'Compromete el perfil',
-                                'response_times' => 'Tiempos de respuesta',
-                                'initiates_hot_chat' => 'Inicia/incentiva chat caliente',
-                                'conversation_coherence' => 'Coherencia en conversación'
-                            ];
-                        @endphp
-
-                        @foreach($checklistItems as $key => $label)
+                        <div class="progress mb-3">
+                            <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>
+                        @foreach($checklistItems as $key => $item)
                             <div class="form-check mb-2">
-                                <input type="checkbox" name="{{ $key }}" id="{{ $key }}" class="form-check-input" value="1">
-                                <label for="{{ $key }}" class="form-check-label">{{ $label }}</label>
+                                <input type="checkbox" name="checklist[{{ $key }}]" id="{{ $key }}" class="form-check-input checklist-item" value="1" data-score="{{ $item['score'] }}">
+                                <label for="{{ $key }}" class="form-check-label">{{ $item['label'] }} ({{ $item['score'] }} puntos)</label>
                             </div>
                         @endforeach
                     </div>
@@ -125,7 +111,7 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="general_score">Calificación General</label>
-                            <input type="number" name="general_score" id="general_score" class="form-control" min="0" max="10" step="0.1" required>
+                            <input type="number" name="general_score" id="general_score" class="form-control" min="0" max="100" readonly>
                         </div>
                         <div class="mb-3">
                             <label for="general_observation">Observación General</label>
@@ -158,11 +144,54 @@
 </div>
 @endsection
 
-
 @push('scripts')
-
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function() {
+    $("#girl_search").autocomplete({
+        source: function(request, response) {
+            $.ajax({
+                url: "{{ route('girls.search') }}",
+                dataType: "json",
+                data: { term: request.term },
+                success: function(data) {
+                    response(data.map(function(item) {
+                        return {
+                            label: item.name + ' (' + item.username + ' - ' + item.internal_id + ')',
+                            value: item.name,
+                            id: item.internal_id,
+                            name: item.name
+                        };
+                    }));
+                }
+            });
+        },
+        minLength: 2,
+        select: function(event, ui) {
+            $("#girl_id").val(ui.item.id);
+            $("#girl_name").val(ui.item.name);
+        }
+    });
+
+    let totalScore = 0;
+    $('.checklist-item').on('change', function() {
+        let score = parseInt($(this).data('score'));
+        if ($(this).is(':checked')) {
+            totalScore += score;
+        } else {
+            totalScore -= score;
+        }
+        updateProgressBar(totalScore);
+    });
+
+    function updateProgressBar(score) {
+        let percentage = Math.min(score, 100);
+        $('.progress-bar').css('width', percentage + '%').attr('aria-valuenow', percentage).text(percentage + '%');
+        $('#general_score').val(percentage);
+    }
+
     const screenshotArea = document.getElementById('screenshot-paste-area');
     const screenshotPreview = document.getElementById('screenshot-preview');
     const screenshotInput = document.getElementById('screenshots');
@@ -189,52 +218,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    $('#auditForm').on('submit', function(e) {
+        e.preventDefault();
+        this.submit();
+    });
 });
 </script>
-<script>
-    function loadJQueryUI(callback) {
-        if (typeof jQuery.ui === 'undefined') {
-            var script = document.createElement('script');
-            script.src = 'https://code.jquery.com/ui/1.12.1/jquery-ui.min.js';
-            script.onload = callback;
-            document.head.appendChild(script);
-        } else {
-            callback();
-        }
-    }
-
-    $(document).ready(function() {
-        loadJQueryUI(function() {
-            $("#girl_search").autocomplete({
-                source: function(request, response) {
-                    $.ajax({
-                        url: "{{ route('girls.search') }}",
-                        dataType: "json",
-                        data: {
-                            term: request.term
-                        },
-                        success: function(data) {
-                            response(data.map(function(item) {
-                                return {
-                                    label: item.name + ' (' + item.username + ' - ' + item.internal_id + ')',
-                                    value: item.name,
-                                    id: item.internal_id,
-                                    name: item.name
-                                };
-                            }));
-                        }
-                    });
-                },
-                minLength: 2,
-                select: function(event, ui) {
-                    $("#girl_id").val(ui.item.id);
-                    $("#girl_name").val(ui.item.name);
-                }
-            });
-        });
-
-        // ... resto de tu código JavaScript ...
-    });
-    </script>
-
 @endpush

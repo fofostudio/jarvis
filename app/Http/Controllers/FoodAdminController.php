@@ -157,6 +157,82 @@ class FoodAdminController extends Controller
             'operatorSummary'
         ));
     }
+    public function showPaymentsGlobal()
+    {
+        // Obtener pagos
+        $payments = Payment::with(['user', 'responsible'])
+            ->latest()
+            ->paginate(20);
+    
+        // Obtener balances de operadores
+        $operatorBalances = OperatorBalance::with(['user', 'responsible'])
+            ->where('balance', '>', 0)
+            ->get();
+    
+        // Calcular deuda total
+        $totalDebt = abs($operatorBalances->sum('balance'));
+    
+        // Calcular total de pagos
+        $totalPayments = Payment::sum('amount');
+    
+        // Depuración
+        Log::info('Payments count: ' . $payments->count());
+        Log::info('Operator Balances count: ' . $operatorBalances->count());
+        Log::info('Total Debt: ' . $totalDebt);
+        Log::info('Total Payments: ' . $totalPayments);
+    
+        return view('foodAdmin.payments.global', compact('payments', 'operatorBalances', 'totalDebt', 'totalPayments'));
+    }
+    public function storePaymentGlobal(Request $request)
+    {
+        $validatedData = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'responsible_id' => 'required|exists:users,id',
+            'amount' => 'required|numeric|min:0',
+            'payment_date' => 'required|date',
+            'notes' => 'nullable|string',
+        ]);
+    
+        DB::transaction(function () use ($validatedData) {
+            // Crear el nuevo pago
+            $payment = Payment::create([
+                'user_id' => $validatedData['user_id'],
+                'responsible_id' => $validatedData['responsible_id'],
+                'amount' => $validatedData['amount'],
+                'payment_date' => $validatedData['payment_date'],
+                'notes' => $validatedData['notes'],
+            ]);
+    
+            // Actualizar el balance del operador
+            $balance = OperatorBalance::firstOrCreate(
+                [
+                    'user_id' => $validatedData['user_id'],
+                    'responsible_id' => $validatedData['responsible_id']
+                ],
+                ['balance' => 0]
+            );
+    
+            // Restar el abono del balance actual
+            $balance->balance -= $validatedData['amount'];
+            
+            // Si el balance llega a cero o es negativo (sobrepago), lo ajustamos a cero
+            if ($balance->balance <= 0) {
+                $balance->balance = 0;
+            }
+    
+            $balance->save();
+    
+            // Si el balance es cero, eliminamos el registro
+            if ($balance->balance == 0) {
+                $balance->delete();
+            }
+        });
+    
+        return response()->json([
+            'message' => 'Abono registrado exitosamente.',
+            'reload' => true
+        ]);
+    }
 
     public function showPayments()
     {
@@ -165,14 +241,16 @@ class FoodAdminController extends Controller
             ->where('responsible_id', $userId)
             ->latest()
             ->paginate(20);
-        $operators = User::whereHas('salesAsResponsible', function ($query) use ($userId) {
-            $query->where('responsible_id', $userId);
-        })->get();
-        $operatorBalances = OperatorBalance::getAllBalancesWithUsers()
-            ->where('responsible_id', $userId)
-            ->keyBy('user_id');
 
-        return view('foodAdmin.payments.index', compact('payments', 'operators', 'operatorBalances'));
+        // Obtenemos los operadores con sus balances
+        $operatorBalances = OperatorBalance::with('user')
+            ->where('responsible_id', $userId)
+            ->get();
+
+        // Calculamos la deuda total
+        $totalDebt = $operatorBalances->where('balance', '<', 0)->sum('balance');
+
+        return view('foodAdmin.payments.index', compact('payments', 'operatorBalances', 'totalDebt'));
     }
 
     public function createPayment()
@@ -236,31 +314,39 @@ class FoodAdminController extends Controller
     public function myShopItems()
     {
         $user = Auth::user();
-
+    
         $sales = Sale::where('user_id', $user->id)
             ->with(['product', 'responsibleUser'])
             ->orderBy('sale_date', 'desc')
             ->get();
-
+    
         $totalSpent = $sales->sum('total_price');
         $totalItems = $sales->sum('quantity');
-
+    
         $salesByResponsible = $sales->groupBy('responsible_id');
-
+    
         $responsibleStats = [];
         foreach ($salesByResponsible as $responsibleId => $responsibleSales) {
             $responsible = User::find($responsibleId);
-            $totalDebt = OperatorBalance::getCurrentBalance($responsibleId);
-
+            $balance = OperatorBalance::where('user_id', $user->id)
+                ->where('responsible_id', $responsibleId)
+                ->first();
+            $totalDebt = $balance ? $balance->balance : 0;
+    
+            $totalPayments = Payment::where('user_id', $user->id)
+                ->where('responsible_id', $responsibleId)
+                ->sum('amount');
+    
             $responsibleStats[] = [
                 'responsible' => $responsible,
                 'total_sales' => $responsibleSales->sum('total_price'),
                 'total_items' => $responsibleSales->sum('quantity'),
-                'total_debt' => $totalDebt,
+                'total_debt' => abs($totalDebt),
+                'total_payments' => $totalPayments,
                 'sales' => $responsibleSales
             ];
         }
-
+    
         $chartData = $sales->groupBy(function ($sale) {
             return Carbon::parse($sale->created_at)->format('Y-m-d');
         })->map(function ($group) {
@@ -269,10 +355,16 @@ class FoodAdminController extends Controller
                 'total' => $group->sum('total_price'),
             ];
         })->values()->toArray();
-
-        return view('operator.my_shopitems', compact('responsibleStats', 'totalSpent', 'totalItems', 'chartData'));
+    
+        // Calcular la deuda total del operador
+        $totalDebt = OperatorBalance::where('user_id', $user->id)->sum('balance');
+    
+        // Calcular el total de abonos realizados por el operador
+        $totalPayments = Payment::where('user_id', $user->id)->sum('amount');
+    
+        return view('operator.my_shopitems', compact('responsibleStats', 'totalSpent', 'totalItems', 'chartData', 'totalDebt', 'totalPayments'));
     }
-
+    
     public function createSale()
     {
         // Obtiene los usuarios cuyos nombres no comiencen con '000'

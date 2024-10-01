@@ -7,6 +7,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use App\Models\Task;
+
+
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -98,12 +101,6 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->getKey();
     }
-
-    /**
-     * Return a key value array, containing any custom claims to be added to the JWT.
-     *
-     * @return array
-     */
     public function getJWTCustomClaims()
     {
         return [];
@@ -118,6 +115,10 @@ class User extends Authenticatable implements JWTSubject
     }
     public function operatorBalance()
     {
-        return $this->hasOne(OperatorBalance::class);
+        return $this->hasOne(OperatorBalance::class, 'user_id');
+    }
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
     }
 }

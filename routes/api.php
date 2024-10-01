@@ -12,13 +12,15 @@ use Illuminate\Support\Facades\Route;
 use Carbon\Carbon;
 use App\Http\Controllers\ChatController;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Controllers\TeamLiderController;
+use App\Http\Controllers\Api\TaskController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-*/
-
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/team-lider/tasks', [TeamLiderController::class, 'getTasks']);
+    Route::post('/team-lider/tasks', [TeamLiderController::class, 'store']);
+    Route::put('/team-lider/tasks/{task}', [TeamLiderController::class, 'update']);
+    Route::delete('/team-lider/tasks/{task}', [TeamLiderController::class, 'destroy']);
+});
 // Rutas públicas
 Route::get('/user-info', [JWTAuthController::class, 'getUserInfo']);
 Route::get('/get-week-range', function (Request $request) {

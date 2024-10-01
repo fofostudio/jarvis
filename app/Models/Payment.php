@@ -26,6 +26,10 @@ class Payment extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function responsible()
+    {
+        return $this->belongsTo(User::class, 'responsible_id');
+    }
 
     // Método para obtener el total de pagos de un usuario
     public static function getTotalPaymentsForUser($userId)

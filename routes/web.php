@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\SessionLogController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\TeamLiderController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AutomatedTaskController;
 use App\Http\Controllers\BreakController;
@@ -33,6 +34,25 @@ use App\Http\Controllers\WorkPlanController;
 Route::redirect('/', '/login');
 
 require __DIR__ . '/auth.php';
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/team-lider', action: [TeamLiderController::class, 'index'])->name('team-lider.index');
+});
+// Ruta para mostrar la vista global de pagos
+Route::get('/food-admin/payments/global', [FoodAdminController::class, 'showPaymentsGlobal'])
+    ->name('foodAdmin.paymentsGlobal');
+
+// Ruta para almacenar un nuevo pago global
+Route::post('/food-admin/payments/global', [FoodAdminController::class, 'storePaymentGlobal'])
+    ->name('foodAdmin.storePaymentGlobal');
+
+// Ruta existente para mostrar pagos (si aún no la tienes)
+Route::get('/food-admin/payments', [FoodAdminController::class, 'showPayments'])
+    ->name('foodAdmin.payments');
+
+// Ruta existente para almacenar pagos (si aún no la tienes)
+Route::post('/food-admin/payments', [FoodAdminController::class, 'storePayment'])
+    ->name('foodAdmin.storePayment');
 
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -143,12 +163,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('category_links', CategoryLinkController::class);
     Route::resource('links', LinkController::class);
     Route::get('/dictionary', [DictionaryController::class, 'index'])->name('dictionary.index');
+    Route::get('/girls/search', [GirlController::class, 'search'])->name('girls.search');
 });
 
 Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::resource('platforms', PlatformController::class);
     Route::resource('girls', GirlController::class);
-    Route::get('/girls/search', [GirlController::class, 'search'])->name('girls.search');
     Route::resource('groups', GroupController::class);
     Route::resource('users', UserController::class);
     Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');

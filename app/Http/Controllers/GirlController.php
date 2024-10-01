@@ -14,9 +14,9 @@ class GirlController extends Controller
         $term = $request->input('term');
 
         $girls = Girl::where('name', 'LIKE', "%$term%")
-                     ->orWhere('username', 'LIKE', "%$term%")
-                     ->orWhere('internal_id', 'LIKE', "%$term%")
-                     ->get(['id', 'name', 'username', 'internal_id']);
+            ->orWhere('username', 'LIKE', "%$term%")
+            ->orWhere('internal_id', 'LIKE', "%$term%")
+            ->get(['id', 'name', 'username', 'internal_id']);
 
         return response()->json($girls);
     }
@@ -27,9 +27,9 @@ class GirlController extends Controller
         // Aplicar filtro de búsqueda
         if ($request->has('search')) {
             $search = $request->input('search');
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('internal_id', 'LIKE', "%{$search}%");
+                    ->orWhere('internal_id', 'LIKE', "%{$search}%");
             });
         }
 

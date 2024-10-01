@@ -95,7 +95,7 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background-color: #4a90e2;
+            background-color: #3c6faa;
             color: white;
             display: flex;
             justify-content: center;

@@ -95,8 +95,8 @@
         </a>
     </li>
     <li class="nav-item">
-        <a href="{{ route('digital.index') }}"
-            class="nav-link text-truncate @if (request()->routeIs('team.*')) active @endif">
+        <a href="{{ route('team-lider.index') }}"
+            class="nav-link text-truncate @if (request()->routeIs('team-lider.*')) active @endif">
             <i class="bi bi-file-earmark-richtext me-2"></i> {{ __('admin.TeamSection') }}
         </a>
     </li>
@@ -113,8 +113,8 @@
         </a>
     </li>
     <li class="nav-item">
-        <a href="{{ route('foodAdmin.payments') }}"
-            class="nav-link text-truncate @if (request()->routeIs('foodAdmin.payments')) active @endif">
+        <a href="{{ route('foodAdmin.paymentsGlobal') }}"
+            class="nav-link text-truncate @if (request()->routeIs('foodAdmin.paymentsGlobal')) active @endif">
             <i class="bi bi-cash-coin me-2"></i> {{ __('admin.DeudasOperadoresCoperativa') }}
         </a>
     </li>
@@ -255,6 +255,12 @@
         <a href="{{ route('my_logins') }}"
             class="nav-link text-truncate @if (request()->routeIs('my_logins')) active @endif">
             <i class="bi bi-clock-history me-2"></i> {{ __('operator.my_logins') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="{{ route('my_logins') }}"
+            class="nav-link text-truncate @if (request()->routeIs('my_audits')) active @endif">
+            <i class="bi bi-clock-history me-2"></i> {{ __('operator.my_audits') }}
         </a>
     </li>
     <li class="nav-item">
