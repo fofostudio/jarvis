@@ -141,7 +141,6 @@
             </div>
         </div>
     </div>
-    @if (auth()->user()->role == 'super_admin' || auth()->user()->role == 'coordinador')
         <!-- Modal for changing attendance status -->
         <div class="modal fade" id="changeStatusModal" tabindex="-1" aria-labelledby="changeStatusModalLabel"
             aria-hidden="true">
@@ -189,7 +188,6 @@
                 </div>
             </div>
         </div>
-    @endif
 
     <style>
         .attendance-cell {

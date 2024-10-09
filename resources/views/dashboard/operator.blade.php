@@ -18,7 +18,22 @@
                         </div>
                     </div>
                 </div>
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.ultimo_corte_en_sistema') }}</h6>
+                        <div class="text-xs font-weight-bold text-primary">
+                            Último registro: {{ \Carbon\Carbon::parse($latestPointsDate)->format('d/m/Y') }}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-bar">
+                            <canvas id="dailyGroupChart" data-chart-data="{{ json_encode($dailyGroupData) }}"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+
 
             <!-- Operator's General Data -->
             <div class="col-xl-4 col-lg-5">
@@ -28,15 +43,16 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h3 class="h4 mb-0 text-gray-800">{{ $assignedGroup->name ?? 'N/A' }}</h3>
-                                <p class="mb-0 text-muted">Jornada: @if($assignedShift == 'morning')
-                                    Mañana
-                                @elseif($assignedShift == 'afternoon')
-                                    Tarde
-                                @elseif($assignedShift == 'night')
-                                    Noche
-                                @else
-                                    {{ $assignedShift }}
-                                @endif</p>
+                                <p class="mb-0 text-muted">Jornada: @if ($assignedShift == 'morning')
+                                        Mañana
+                                    @elseif($assignedShift == 'afternoon')
+                                        Tarde
+                                    @elseif($assignedShift == 'night')
+                                        Noche
+                                    @else
+                                        {{ $assignedShift }}
+                                    @endif
+                                </p>
                             </div>
                             <div class="d-flex align-items-center">
                                 <label class="toggle-switch mr-3">
@@ -49,7 +65,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">{{ __('admin.operator_general_data') }}</h6>
@@ -60,7 +75,67 @@
                         <p><strong>{{ __('admin.assigned_girls') }}:</strong> {{ $assignedGirls->count() }}</p>
                     </div>
                 </div>
+                <!-- Estado del Plan de Trabajo de Hoy -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Plan de Trabajo de Hoy</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @foreach (['mensajes', 'icebreakers', 'cartas'] as $type)
+                                <div class="col-md-4 mb-3">
+                                    <div class="card {{ $completedPlans[$type] ? 'bg-success text-white' : 'bg-light' }}">
+                                        <div class="card-body text-center">
+                                            <h5 class="card-title">{{ ucfirst($type) }}</h5>
+                                            @if ($completedPlans[$type])
+                                                <i class="fas fa-check-circle fa-2x"></i>
+                                                <p class="mb-0">Completado</p>
+                                            @else
+                                                <i class="fas fa-times-circle fa-2x"></i>
+                                                <p class="mb-0">Pendiente</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Últimos Reportes Operativos del Grupo -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Últimos Reportes Operativos del Grupo</h6>
+                    </div>
+                    <div class="card-body">
+                        @if ($latestGroupReports->isNotEmpty())
+                            @foreach ($latestGroupReports as $report)
+                                <div class="mb-3">
+                                    <h6>{{ $report->report_date->format('d/m/Y') }} - {{ $report->user->name }}</h6>
+                                    <p>
+                                        <strong>Tipo:</strong>
+                                        @if ($report->report_type === 'manual')
+                                            Sugerencia/Queja/Reclamo
+                                        @elseif($report->report_type === 'conversational')
+                                            Conversacional
+                                        @endif
+                                    </p>
+                                    <p><strong>Estado:</strong> {{ $report->status }}</p>
+                                    @if ($report->is_approved === false)
+                                        <p class="text-danger">{{ $report->auditor_comment }}</p>
+                                    @endif
+                                    <a href="{{ route('operative-reports.show', $report->id) }}"
+                                        class="btn btn-sm btn-primary">Ver Detalles</a>
+                                </div>
+                                @if (!$loop->last)
+                                    <hr>
+                                @endif
+                            @endforeach
+                        @else
+                            <p>No hay reportes recientes.</p>
+                        @endif
+                    </div>
+                </div>
                 <!-- Last Logins -->
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
@@ -122,11 +197,11 @@
         var chartData = @json($chartData);
     </script>
     <script>
-        // operator-dashboard.js
-
         document.addEventListener('DOMContentLoaded', function() {
             initOperatorDashboard();
+            initDailyGroupChart();
             initBreakToggle();
+            initAssignedGirlsTable();
         });
 
         function initOperatorDashboard() {
@@ -147,6 +222,39 @@
                         borderColor: 'rgb(255, 99, 132)',
                         tension: 0.1,
                         fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function initDailyGroupChart() {
+            var ctx = document.getElementById('dailyGroupChart').getContext('2d');
+            var dailyGroupData = JSON.parse(document.getElementById('dailyGroupChart').dataset.chartData);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dailyGroupData.map(item => item.group.name),
+                    datasets: [{
+                        label: 'Puntos',
+                        data: dailyGroupData.map(item => item.total_points),
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Meta',
+                        data: dailyGroupData.map(item => item.total_goal),
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
                     }]
                 },
                 options: {
@@ -260,7 +368,8 @@
                 fetch(`/${action}`, {
                         method: 'POST',
                         headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                                'content'),
                             'Accept': 'application/json',
                             'Content-Type': 'application/json'
                         }
@@ -306,7 +415,6 @@
             checkBreakStatus();
         }
 
-        // Función para inicializar el DataTable de las chicas asignadas
         function initAssignedGirlsTable() {
             $('#dataTable').DataTable({
                 language: {
@@ -314,12 +422,8 @@
                 }
             });
         }
-
-        // Llamada a la función de inicialización del DataTable
-        document.addEventListener('DOMContentLoaded', function() {
-            initAssignedGirlsTable();
-        });
     </script>
+
 
     <style>
         .toggle-switch {

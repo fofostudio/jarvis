@@ -581,7 +581,7 @@ class FoodAdminController extends Controller
         $recentSales = Sale::where('responsible_id', $userId)
             ->with(['product', 'user'])
             ->latest('sale_date')
-            ->limit(10)
+            ->limit(50)
             ->get();
 
         // Balance de operadores
@@ -597,7 +597,7 @@ class FoodAdminController extends Controller
         $recentPayments = Payment::with('user')
             ->where('responsible_id', $userId)
             ->latest('payment_date')
-            ->limit(5)
+            ->limit(50)
             ->get();
 
         return view('foodAdmin.dashboard', compact(

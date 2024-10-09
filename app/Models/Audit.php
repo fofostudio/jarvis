@@ -4,33 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Audit extends Model
 {
-
     protected $fillable = [
         'auditor_id',
-        'operator_id',
-        'conversation_date',
-        'review_date',
-        'platform_id',
+        'audit_type',  // 'group' or 'individual'
         'group_id',
-        'girl_id',
-        'client_name',
-        'client_id',
-        'client_status',
-        'checklist',
-        'general_score',
-        'general_observation',
-        'recommendations',
-        'screenshots'
+        'operator_id',
+        'audit_date',
+        'total_score',
     ];
 
     protected $casts = [
-        'conversation_date' => 'datetime',
-        'review_date' => 'datetime',
-        'checklist' => 'array',
-        'screenshots' => 'array',
+        'audit_date' => 'datetime',
     ];
 
     public function auditor(): BelongsTo
@@ -38,23 +26,18 @@ class Audit extends Model
         return $this->belongsTo(User::class, 'auditor_id');
     }
 
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
+
     public function operator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'operator_id');
     }
 
-    public function girl(): BelongsTo
+    public function auditDetails(): HasMany
     {
-        return $this->belongsTo(Girl::class);
-    }
-
-    public function platform(): BelongsTo
-    {
-        return $this->belongsTo(Platform::class);
-    }
-
-    public function group(): BelongsTo
-    {
-        return $this->belongsTo(Group::class);
+        return $this->hasMany(AuditDetail::class);
     }
 }

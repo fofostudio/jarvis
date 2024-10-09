@@ -19,6 +19,11 @@ class Group extends Model
     {
         return $this->hasMany(Point::class);
     }
+    public function groupCategory()
+{
+    return $this->belongsTo(GroupCategory::class);
+}
+
 
     public function operators()
     {
@@ -37,6 +42,10 @@ class Group extends Model
     public function groupOperators()
     {
         return $this->hasMany(GroupOperator::class);
+    }
+    public function audits()
+    {
+        return $this->hasMany(Audit::class);
     }
     public function category()
     {

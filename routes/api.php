@@ -15,6 +15,10 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\TeamLiderController;
 use App\Http\Controllers\Api\TaskController;
 
+
+
+Route::middleware('auth:sanctum')->get('/user', [AuthenticatedSessionController::class, 'getAuthenticatedUser']);
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/team-lider/tasks', [TeamLiderController::class, 'getTasks']);
     Route::post('/team-lider/tasks', [TeamLiderController::class, 'store']);
@@ -22,7 +26,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/team-lider/tasks/{task}', [TeamLiderController::class, 'destroy']);
 });
 // Rutas públicas
-Route::get('/user-info', [JWTAuthController::class, 'getUserInfo']);
+Route::get(uri: '/user-info', action: [JWTAuthController::class, 'getUserInfo']);
 Route::get('/get-week-range', function (Request $request) {
     $week = $request->input('week');
     $year = $request->input('year');

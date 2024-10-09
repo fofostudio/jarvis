@@ -1,93 +1,98 @@
-// popup.js
-
-document.addEventListener('DOMContentLoaded', async function() {
-    const userInfo = await chrome.runtime.sendMessage({ action: 'getUserInfo' });
-    const userInfoDiv = document.getElementById('userInfo');
-    const girlSelect = document.getElementById('girlSelect');
-    const taskButtons = document.getElementById('taskButtons');
-
-    if (userInfo && userInfo.userInfo) {
-        displayUserInfo(userInfo.userInfo);
-        populateGirlSelect(userInfo.userInfo);
-
-        girlSelect.addEventListener('change', () => loadTasks(userInfo.userInfo));
-
-        const activeTab = await getCurrentTab();
-        const activePlatform = detectPlatform(activeTab.url);
-        if (activePlatform) {
-            loadTasks(userInfo.userInfo, activePlatform);
+document.addEventListener('DOMContentLoaded', function() {
+    chrome.storage.local.get(['userInfo'], function(result) {
+        if (result.userInfo) {
+            displayUserInfo(result.userInfo);
+        } else {
+            displayLoginPrompt();
         }
-    } else {
-        userInfoDiv.innerHTML = `<p>No has iniciado sesión. Por favor, inicia sesión en el sitio web de JarvisBot.</p>`;
-    }
+    });
 });
+function displayUserData(userData) {
+    const userDataDiv = document.getElementById('userData');
+    userDataDiv.innerHTML = `
+        <h2>Información del Usuario</h2>
+        <p><strong>Nombre:</strong> ${userData.name}</p>
+        <p><strong>Email:</strong> ${userData.email}</p>
+        <p><strong>Rol:</strong> ${userData.role}</p>
+        <h3>Grupos:</h3>
+        <ul>
+            ${userData.groups.map(group => `
+                <li>
+                    <strong>${group.name}</strong> (Turno: ${group.shift})
+                    <ul>
+                        ${group.girls.map(girl => `
+                            <li>${girl.name} (${girl.platform})</li>
+                        `).join('')}
+                    </ul>
+                </li>
+            `).join('')}
+        </ul>
+        <h3>Plataformas:</h3>
+        <ul>
+            ${userData.platforms.map(platform => `<li>${platform}</li>`).join('')}
+        </ul>
+    `;
 
-function displayUserInfo(user) {
+    // Detectar la plataforma actual y crear los botones de tareas
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        const url = tabs[0].url;
+        const platform = detectPlatform(url);
+        if (platform) {
+            createTaskButtons(platform);
+        }
+    });
+}
+function displayLoginPrompt() {
     const userInfoDiv = document.getElementById('userInfo');
     userInfoDiv.innerHTML = `
-        <h2>Bienvenido, ${user.name}</h2>
-        <p>Email: ${user.email}</p>
-        <p>Rol: ${user.role}</p>
+        <p>Por favor, inicia sesión en <a href="https://jarvisbot.biz" target="_blank">JarvisBot</a> para usar la extensión.</p>
     `;
 }
-
-function populateGirlSelect(userInfo) {
-    const girlSelect = document.getElementById('girlSelect');
-    const allGirls = userInfo.groups.flatMap(group => group.girls);
-    girlSelect.innerHTML = allGirls.map(girl => `
-        <option value="${girl.id}">${girl.name} (${girl.platform})</option>
-    `).join('');
+function displayError(message) {
+    const userDataDiv = document.getElementById('userData');
+    userDataDiv.innerHTML = `<p class="error">${message}</p>`;
 }
 
-async function loadTasks(userInfo, platform) {
-    const taskButtons = document.getElementById('taskButtons');
-    const girlId = document.getElementById('girlSelect').value;
-    const girl = userInfo.groups.flatMap(group => group.girls).find(g => g.id.toString() === girlId);
+function createTaskButtons(platform) {
+    const taskButtonsDiv = document.getElementById('taskButtons');
+    taskButtonsDiv.innerHTML = '<h3>Tareas Automáticas</h3>';
 
-    if (!platform && girl) {
-        platform = girl.platform;
-    }
-
-    const tasks = await getTasks(platform);
-
-    taskButtons.innerHTML = tasks.map(task => `
-        <button
-            onclick="executeTask('${platform}', '${task}', ${JSON.stringify(girl)})"
-            ${girl && girl.platform === platform ? '' : 'disabled'}
-        >
-            ${task}
-        </button>
-    `).join('');
+    const tasks = getTasksForPlatform(platform);
+    tasks.forEach(task => {
+        const button = document.createElement('button');
+        button.textContent = task.name;
+        button.onclick = () => executeTask(task.id);
+        taskButtonsDiv.appendChild(button);
+    });
 }
 
-function executeTask(platform, task, girlData) {
-    chrome.runtime.sendMessage({ action: 'executeTask', platform, task, girlData });
-}
-
-async function getCurrentTab() {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    return tab;
-}
-
-function detectPlatform(url) {
-    const platforms = ['udate', 'talkytimes', 'amolatina'];
-    return platforms.find(platform => url.includes(platform)) || null;
-}
-
-async function getTasks(platform) {
-    // En una implementación real, deberías obtener esto del backend
+function getTasksForPlatform(platform) {
     const tasks = {
-        UDate: ['Login', 'Auto Like', 'Send Message'],
-        TalkyTimes: ['Login', 'Update Profile', 'Check Messages'],
-        AmoLatina: ['Login', 'Browse Profiles', 'Send Gift']
+        udate: [
+            { id: 'sendMessage', name: 'Enviar Mensaje' },
+            { id: 'updateProfile', name: 'Actualizar Perfil' }
+        ],
+        talkytimes: [
+            { id: 'sendLike', name: 'Enviar Like' },
+            { id: 'browseProfiles', name: 'Explorar Perfiles' }
+        ],
+        amolatina: [
+            { id: 'sendGift', name: 'Enviar Regalo' },
+            { id: 'startChat', name: 'Iniciar Chat' }
+        ]
     };
     return tasks[platform] || [];
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === 'taskCompleted') {
-        alert(`Tarea "${message.task}" completada en ${message.platform}`);
-    } else if (message.action === 'taskFailed') {
-        alert(`Error al ejecutar la tarea "${message.task}" en ${message.platform}: ${message.error}`);
-    }
-});
+function executeTask(taskId) {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, {action: "executeTask", taskId: taskId});
+    });
+}
+
+function detectPlatform(url) {
+    if (url.includes("udate.love")) return "udate";
+    if (url.includes("talkytimes.com")) return "talkytimes";
+    if (url.includes("amolatina.com")) return "amolatina";
+    return null;
+}

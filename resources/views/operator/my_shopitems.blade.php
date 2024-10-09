@@ -8,22 +8,6 @@
             <div class="col-md-3">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Total Gastado</h5>
-                        <p class="card-text h3">{{ number_format($totalSpent, 0, ',', '.') }} COP</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Total de Artículos</h5>
-                        <p class="card-text h3">{{ $totalItems }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card">
-                    <div class="card-body">
                         <h5 class="card-title">Deuda Total</h5>
                         <p class="card-text h3">{{ number_format(abs($totalDebt), 0, ',', '.') }} COP</p>
                     </div>
@@ -37,6 +21,23 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Gastado</h5>
+                        <p class="card-text h3">{{ number_format($totalSpent, 0, ',', '.') }} COP</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total de Artículos</h5>
+                        <p class="card-text h3">{{ $totalItems }}</p>
+                    </div>
+                </div>
+            </div>
+           
         </div>
 
         <div class="card mb-4">

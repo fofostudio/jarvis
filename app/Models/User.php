@@ -43,6 +43,11 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(SessionLog::class);
     }
+    // In User.php model
+    public function workPlanDetails()
+    {
+        return $this->hasMany(WorkPlanDetail::class);
+    }
     public function conversations()
     {
         return $this->belongsToMany(Conversation::class, 'conversation_user');

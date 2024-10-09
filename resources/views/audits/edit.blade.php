@@ -8,100 +8,115 @@
         @csrf
         @method('PUT')
 
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Información General</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label>Operador</label>
-                            <input type="text" class="form-control" value="{{ $audit->operator->name }}" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>Fecha de Conversación</label>
-                            <input type="text" class="form-control" value="{{ $audit->conversation_date->format('d/m/Y') }}" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>Fecha de Revisión</label>
-                            <input type="text" class="form-control" value="{{ $audit->review_date->format('d/m/Y') }}" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>Plataforma</label>
-                            <input type="text" class="form-control" value="{{ $audit->platform->name }}" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>Grupo</label>
-                            <input type="text" class="form-control" value="{{ $audit->group->name }}" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>Chica</label>
-                            <input type="text" class="form-control" value="{{ $audit->girl->name }} ({{ $audit->girl->internal_id }})" readonly>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Información del Cliente</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label>Nombre del Cliente</label>
-                            <input type="text" class="form-control" value="{{ $audit->client_name }}" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>ID del Cliente</label>
-                            <input type="text" class="form-control" value="{{ $audit->client_id }}" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>Estatus del Cliente</label>
-                            <input type="text" class="form-control" value="{{ $audit->client_status }}" readonly>
-                        </div>
-                    </div>
-                </div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Información General</h5>
             </div>
-
-            <div class="col-md-6">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Checklist de Auditoría</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="progress mb-3">
-                            <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label>Auditor</label>
+                            <input type="text" class="form-control" value="{{ $audit->auditor->name }}" readonly>
                         </div>
-                        @foreach($checklistItems as $key => $item)
-                            <div class="form-check mb-2">
-                                <input type="checkbox" name="checklist[{{ $key }}]" id="{{ $key }}" class="form-check-input checklist-item" value="1" data-score="{{ $item['score'] }}" {{ isset($audit->checklist[$key]) && $audit->checklist[$key] ? 'checked' : '' }}>
-                                <label for="{{ $key }}" class="form-check-label">{{ $item['label'] }} ({{ $item['score'] }} puntos)</label>
-                            </div>
-                        @endforeach
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label>Tipo de Auditoría</label>
+                            <input type="text" class="form-control" value="{{ ucfirst($audit->audit_type) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label>Fecha de Auditoría</label>
+                            <input type="date" name="audit_date" class="form-control" value="{{ $audit->audit_date->format('Y-m-d') }}" required>
+                        </div>
                     </div>
                 </div>
-    
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Evaluación y Comentarios</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label>{{ $audit->audit_type == 'group' ? 'Grupo' : 'Operador' }}</label>
+                            <input type="text" class="form-control" value="{{ $audit->audit_type == 'group' ? $audit->group->name : $audit->operator->name }}" readonly>
+                        </div>
                     </div>
-                    <div class="card-body">
+                    <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="general_score">Calificación General</label>
-                            <input type="number" name="general_score" id="general_score" class="form-control" min="0" max="100" step="0.1" value="{{ $audit->general_score }}" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label for="general_observation">Observación General</label>
-                            <textarea name="general_observation" id="general_observation" class="form-control" rows="3" required>{{ $audit->general_observation }}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="recommendations">Recomendaciones</label>
-                            <textarea name="recommendations" id="recommendations" class="form-control" rows="3">{{ $audit->recommendations }}</textarea>
+                            <label>Calificación Total</label>
+                            <input type="number" name="total_score" id="total_score" class="form-control" value="{{ $audit->total_score }}" readonly>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        @foreach($audit->auditDetails as $index => $detail)
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Detalle de Auditoría - {{ $detail->girl->name }}</h5>
+            </div>
+            <div class="card-body">
+                <input type="hidden" name="audit_details[{{ $index }}][id]" value="{{ $detail->id }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label>Chica</label>
+                            <input type="text" class="form-control" value="{{ $detail->girl->name }} ({{ $detail->girl->internal_id }})" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label>Plataforma</label>
+                            <input type="text" class="form-control" value="{{ $detail->platform->name }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label>Nombre del Cliente</label>
+                            <input type="text" name="audit_details[{{ $index }}][client_name]" class="form-control" value="{{ $detail->client_name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>ID del Cliente</label>
+                            <input type="text" name="audit_details[{{ $index }}][client_id]" class="form-control" value="{{ $detail->client_id }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Estatus del Cliente</label>
+                            <select name="audit_details[{{ $index }}][client_status]" class="form-control" required>
+                                <option value="Nuevo" {{ $detail->client_status == 'Nuevo' ? 'selected' : '' }}>Nuevo</option>
+                                <option value="Antiguo" {{ $detail->client_status == 'Antiguo' ? 'selected' : '' }}>Antiguo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6>Checklist de Auditoría</h6>
+                            <div class="progress mb-3">
+                                <div class="progress-bar" role="progressbar" style="width: {{ $detail->general_score }}%;" aria-valuenow="{{ $detail->general_score }}" aria-valuemin="0" aria-valuemax="100">{{ $detail->general_score }}%</div>
+                            </div>
+                            @foreach($checklistItems as $key => $item)
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" name="audit_details[{{ $index }}][checklist][{{ $key }}]" id="{{ $index }}_{{ $key }}" class="form-check-input checklist-item" value="1" data-score="{{ $item['score'] }}" data-index="{{ $index }}" {{ isset($detail->checklist[$key]) && $detail->checklist[$key] ? 'checked' : '' }}>
+                                    <label for="{{ $index }}_{{ $key }}" class="form-check-label">{{ $item['label'] }} ({{ $item['score'] }} puntos)</label>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label>Calificación General</label>
+                            <input type="number" name="audit_details[{{ $index }}][general_score]" class="form-control general-score" data-index="{{ $index }}" min="0" max="100" step="0.1" value="{{ $detail->general_score }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label>Observación General</label>
+                            <textarea name="audit_details[{{ $index }}][general_observation]" class="form-control" rows="3" required>{{ $detail->general_observation }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label>Recomendaciones</label>
+                            <textarea name="audit_details[{{ $index }}][recommendations]" class="form-control" rows="3">{{ $detail->recommendations }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endforeach
 
         <div class="d-flex justify-content-between">
             <button type="submit" class="btn btn-primary btn-lg">Actualizar Auditoría</button>
@@ -141,29 +156,46 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    let totalScore = {{ $audit->general_score }};
-    updateProgressBar(totalScore);
-
     $('.checklist-item').on('change', function() {
-        let score = parseInt($(this).data('score'));
-        if ($(this).is(':checked')) {
-            totalScore += score;
-        } else {
-            totalScore -= score;
-        }
-        updateProgressBar(totalScore);
+        let index = $(this).data('index');
+        updateScore(index);
     });
 
-    function updateProgressBar(score) {
-        let percentage = Math.min(score, 100);
-        $('.progress-bar').css('width', percentage + '%').attr('aria-valuenow', percentage).text(percentage + '%');
-        $('#general_score').val(percentage);
+    function updateScore(index) {
+        let totalScore = 0;
+        $(`.checklist-item[data-index="${index}"]:checked`).each(function() {
+            totalScore += parseInt($(this).data('score'));
+        });
+        let percentage = Math.min(totalScore, 100);
+        $(`input[name="audit_details[${index}][general_score]"]`).val(percentage);
+        $(`input[name="audit_details[${index}][general_score]"]`).siblings('.progress-bar')
+            .css('width', percentage + '%')
+            .attr('aria-valuenow', percentage)
+            .text(percentage + '%');
+        
+        updateTotalScore();
+    }
+
+    function updateTotalScore() {
+        let totalScore = 0;
+        let count = 0;
+        $('.general-score').each(function() {
+            totalScore += parseFloat($(this).val());
+            count++;
+        });
+        let averageScore = count > 0 ? totalScore / count : 0;
+        $('#total_score').val(averageScore.toFixed(2));
     }
 
     $('#auditForm').on('submit', function(e) {
         e.preventDefault();
-        $('#general_score').prop('readonly', false);
+        $('.general-score').prop('readonly', false);
         this.submit();
+    });
+
+    // Inicializar los scores
+    $('.checklist-item').each(function() {
+        updateScore($(this).data('index'));
     });
 });
 </script>

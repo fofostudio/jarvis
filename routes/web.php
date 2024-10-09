@@ -49,17 +49,26 @@ Route::post('/food-admin/payments/global', [FoodAdminController::class, 'storePa
 // Ruta existente para mostrar pagos (si aún no la tienes)
 Route::get('/food-admin/payments', [FoodAdminController::class, 'showPayments'])
     ->name('foodAdmin.payments');
+Route::get('/audits/getGirlsByGroup', [AuditController::class, 'getGirlsByGroup'])->name('audits.getGirlsByGroup');
 
 // Ruta existente para almacenar pagos (si aún no la tienes)
 Route::post('/food-admin/payments', [FoodAdminController::class, 'storePayment'])
     ->name('foodAdmin.storePayment');
 
-
+Route::get('/my-work-plan', [WorkPlanController::class, 'myWorkPlan'])->name('work_plans.my_work_plan');
+Route::post('/my-work-plan', [WorkPlanController::class, 'updateMyWorkPlan'])->name('work_plans.update_my_work_plan');
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
-
-Route::middleware('auth')->group(function () {
+    Route::prefix('work-detail')->name('work-detail.')->group(function () {
+        Route::get('/', [WorkPlanController::class, 'indexDetail'])->name('indexDetail');
+        Route::get('/create', [WorkPlanController::class, 'createDetail'])->name('createDetail');
+        Route::post('/', [WorkPlanController::class, 'storeDetail'])->name('storeDetail');
+        Route::get('/{workPlanDetail}', [WorkPlanController::class, 'showDetail'])->name('showDetail');
+        Route::get('/{workPlanDetail}/edit', [WorkPlanController::class, 'editDetail'])->name('editDetail');
+        Route::put('/{workPlanDetail}', [WorkPlanController::class, 'updateDetail'])->name('updateDetail');
+        Route::delete('/{workPlanDetail}', [WorkPlanController::class, 'destroyDetail'])->name('destroyDetail');
+    });Route::middleware('auth')->group(function () {
     Route::get('/admin/get-session-log-time/{userId}/{date}', [SessionLogController::class, 'getSessionLogTime'])->name('admin.get-session-log-time');
     // Nueva ruta para obtener datos de un registro de sesión específico
     Route::get('/admin/get-session-log-data/{userId}/{date}', [SessionLogController::class, 'getSessionLogData'])
@@ -154,7 +163,6 @@ Route::middleware('auth')->group(function () {
     });
     Route::post('/operative-reports/{operativeReport}/review', [OperativeReportController::class, 'reviewReport'])->name('operative-reports.review');
     Route::get('/operative-reports/{operativeReport}/download', [OperativeReportController::class, 'downloadFile'])->name('operative-reports.download');
-    Route::get('/my-work-plan', [WorkPlanController::class, 'myPlan'])->name('my_work_plan');
     Route::get('/automated-task/platform/{platform}', [AutomatedTaskController::class, 'showPlatformTasks'])
         ->name('automated_task.platform');
     Route::resource('products', ProductController::class);

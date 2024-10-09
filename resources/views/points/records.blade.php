@@ -20,7 +20,6 @@
                 <td>{{ $point->points }}</td>
                 <td>{{ $point->goal }}</td>
                 <td>
-
                     <button onclick="openEditModal({{ $point->id }})" class="btn btn-success rounded-pill btn-sm me-2">
                         <i class="bi-pencil"></i>
                     </button>
@@ -40,33 +39,3 @@
         @endforelse
     </tbody>
 </table>
-<script>
-            $(document).ready(function() {
-            try {
-                $('#recordsTable').DataTable({
-                    // Opciones de DataTables
-                    "language": {
-                        "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
-                    },
-                    "drawCallback": function(settings) {
-                        setupActionDelete();
-                    }
-                });
-            } catch (error) {
-                console.error('Error al inicializar DataTables:', error);
-            }
-        });
-
-        function filterRecords(date) {
-            $.ajax({
-                url: "{{ route('points.index') }}",
-                data: {
-                    date: date
-                },
-                success: function(response) {
-                    // Actualizar la sección de registros en la vista con la respuesta del servidor
-                    $('.records-section').html(response);
-                }
-            });
-        }
-</script>

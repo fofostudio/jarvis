@@ -41,9 +41,9 @@
         </a>
     </li>
     <li class="nav-item">
-        <a href="{{ route('work_plans.index') }}"
-            class="nav-link text-truncate @if (request()->routeIs('work_plans.*')) active @endif">
-            <i class="bi bi-calendar-week me-2"></i> {{ __('admin.work_plans') }}
+        <a href="{{ route('work-detail.indexDetail') }}"
+            class="nav-link text-truncate @if (request()->routeIs('work-detail.indexDetail')) active @endif">
+            <i class="bi bi-calendar-week me-2"></i> {{ __('admin.work_plan_management') }}
         </a>
     </li>
     <li class="nav-item">
@@ -294,7 +294,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a href="{{ route('my_work_plan') }}"
+        <a href="{{ route('work_plans.my_work_plan') }}"
             class="nav-link text-truncate @if (request()->routeIs('ChatWithJarvis')) active @endif">
             <i class="bi bi-robot me-2"></i> {{ __('operator.ChatWithJarvis') }}
         </a>
@@ -306,20 +306,20 @@
         </a>
     </li>
     <li class="nav-item">
-        <a href="{{ route('my_work_plan') }}"
+        <a href="{{ route('work_plans.my_work_plan') }}"
             class="nav-link text-truncate @if (request()->routeIs('TempMail')) active @endif">
             <i class="bi bi-envelope-paper me-2"></i> {{ __('operator.TempMail') }}
         </a>
     </li>
     <li class="nav-item">
-        <a href="{{ route('my_work_plan') }}"
+        <a href="{{ route('work_plans.my_work_plan') }}"
             class="nav-link text-truncate @if (request()->routeIs('beneficiosMultas')) active @endif">
             <i class="bi bi-cash-coin me-2"></i> {{ __('operator.beneficiosMultas') }}
         </a>
     </li>
     <li class="nav-item">
-        <a href="{{ route('my_work_plan') }}"
-            class="nav-link text-truncate @if (request()->routeIs('my_work_plan')) active @endif">
+        <a href="{{ route('work_plans.my_work_plan') }}"
+            class="nav-link text-truncate @if (request()->routeIs('work_plans.my_work_plan')) active @endif">
             <i class="bi bi-calendar2-check me-2"></i> {{ __('operator.my_work_plan') }}
         </a>
     </li>

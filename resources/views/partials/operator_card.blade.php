@@ -187,14 +187,14 @@
                         <i class="fas {{ $operator['is_on_break'] ? 'fa-stop' : 'fa-mug-hot' }}"></i>
                     </button>
 
-                    @if (auth()->user()->role == 'super_admin' || auth()->user()->role == 'coordinador')
+                   
                         @if ($isActive)
                             <button class="close-session" data-user-id="{{ $operator['id_operador'] }}"
                                 title="Cerrar Sesión">
                                 <i class="fas fa-sign-out-alt"></i>
                             </button>
                         @endif
-                    @endif
+                 
                 </div>
             </div>
         </div>

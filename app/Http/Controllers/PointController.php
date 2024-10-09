@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\Group;
 use App\Models\GroupOperator;
 use App\Models\Platform;
+use Carbon\Carbon;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -17,64 +19,46 @@ class PointController extends Controller
 {
     public function index(Request $request)
     {
-        $date = $request->input('date', now()->format('Y-m-d'));
-        $userId = $request->input('user_id');
-        $groupId = $request->input('group_id');
+        $date = $request->input('date') ? Carbon::parse($request->input('date')) : now();
+        $isFiltering = $request->boolean('filter', false);
 
-        $query = Point::with(['user', 'group'])
-            ->whereDate('date', $date);
+        if ($isFiltering) {
+            // Filtering for a specific day
+            $points = Point::with(['user', 'group'])
+                ->whereDate('date', $date)
+                ->get();
+        } else {
+            // Loading data for the entire month
+            $monthStart = $date->copy()->startOfMonth();
+            $monthEnd = $date->copy()->endOfMonth();
 
-        if ($userId) {
-            $query->where('user_id', $userId);
-        }
+            $points = Point::with(['user', 'group'])
+                ->whereBetween('date', [$monthStart, $monthEnd])
+                ->get();
 
-        if ($groupId) {
-            $query->where('group_id', $groupId);
-        }
+            $calendarData = [];
+            foreach ($monthStart->range($monthEnd) as $day) {
+                $dayPoints = $points->where('date', $day->format('Y-m-d'));
+                $shifts = $dayPoints->pluck('shift')->unique()->values()->toArray();
+                $status = count($shifts) === 3 ? 'complete' : (count($shifts) > 0 ? 'partial' : 'none');
 
-        $points = $query->get();
-
-        $users = User::where('name', 'not like', '000%')
-            ->orderBy('name')
-            ->get();
-
-        $groups = Group::orderBy('name')->get();
-
-        // Get all dates with points for the calendar
-        $dates = Point::select('date')
-            ->distinct()
-            ->orderBy('date')
-            ->pluck('date');
-
-        // Prepare calendar data
-        $calendarData = [];
-        foreach ($dates as $date) {
-            $dayShifts = Point::whereDate('date', $date)
-                ->pluck('shift')
-                ->toArray(); // Convert the collection to an array
-
-            $status = count($dayShifts) === 3 ? 'complete' : (count($dayShifts) > 0 ? 'partial' : 'none');
-
-            $calendarData[$date] = [
-                'status' => $status,
-                'shifts' => $dayShifts,
-            ];
+                $calendarData[$day->format('Y-m-d')] = [
+                    'status' => $status,
+                    'shifts' => $shifts,
+                ];
+            }
         }
 
         if ($request->ajax()) {
-            // Devolver solo la sección de registros de la vista
-            return view('points.records', compact('points'))->render();
+            return response()->json([
+                'records' => view('points.records', ['points' => $points])->render(),
+                'calendarData' => $isFiltering ? null : $calendarData,
+                'currentMonth' => $isFiltering ? null : $date->format('F Y'),
+            ]);
         }
 
-        return view('points.index', compact(
-            'points',
-            'users',
-            'groups',
-            'calendarData',
-            'date',
-            'userId',
-            'groupId'
-        ));
+        // For initial page load
+        return view('points.index', compact('points', 'calendarData', 'date'));
     }
     public function create()
     {

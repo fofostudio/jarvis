@@ -236,6 +236,8 @@ return [
     'yes_confirm' => 'Si, Eliminar',
     'cancel_confirm' => 'Espera revisemos',
     'TeamSection' => 'Gestion de Team',
+    'work_plan_management' => 'Gestion de Planes',
+    
 
 
 

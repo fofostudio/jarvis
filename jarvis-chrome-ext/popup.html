@@ -3,42 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JarvisBot Extension</title>
+    <title>JarvisBot</title>
     <style>
-        body {
-            width: 300px;
-            padding: 10px;
+        body { 
+            width: 300px; 
+            padding: 10px; 
             font-family: Arial, sans-serif;
         }
-        select, button {
-            width: 100%;
-            margin-top: 10px;
-            padding: 5px;
+        .error { 
+            color: red; 
+            font-weight: bold;
+        }
+        #taskButtons { 
+            margin-top: 20px; 
         }
         button {
+            margin: 5px;
+            padding: 5px 10px;
             background-color: #4CAF50;
             color: white;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
         }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        #userInfo {
-            margin-bottom: 15px;
+        button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
+    <h1>JarvisBot</h1>
     <div id="userInfo"></div>
-
-    <select id="girlSelect">
-        <option value="">Selecciona una chica</option>
-    </select>
-
+    <div id="userData">Cargando datos del usuario...</div>
     <div id="taskButtons"></div>
-
     <script src="popup.js"></script>
 </body>
 </html>

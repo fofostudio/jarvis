@@ -8,8 +8,10 @@ use App\Models\User;
 use App\Models\Point;
 use App\Models\Girl;
 use App\Models\GroupOperator;
+use App\Models\OperativeReport;
 use App\Models\Platform;
 use App\Models\SessionLog;
+use App\Models\WorkPlanDetail;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -283,25 +285,32 @@ class DashboardController extends Controller
 
     private function operatorDashboard($user)
     {
-        $currentShift = $this->getCurrentShift();
-        $groupOperator = GroupOperator::where('user_id', $user->id)
-            ->first();
-
-        $assignedGroup = $groupOperator ? $groupOperator->group : null;
-        $assignedGirls = $assignedGroup ? $assignedGroup->girls : collect();
-
+        $currentDate = now()->toDateString();
+        $groupOperator = GroupOperator::where('user_id', $user->id)->first();
+    
+        if (!$groupOperator) {
+            // Manejar el caso en que el operador no tiene un grupo asignado
+            return view('dashboard.operator')->with('error', 'No tienes un grupo asignado.');
+        }
+    
+        $assignedGroup = $groupOperator->group;
+        $assignedGirls = $assignedGroup->girls;
+    
+        // Obtener la jornada asignada del operador
+        $assignedShift = $groupOperator->shift;
+    
         $currentMonth = Carbon::now()->format('m');
         $currentYear = Carbon::now()->format('Y');
-
+    
         $operatorPoints = Point::where('user_id', $user->id)
             ->whereMonth('date', $currentMonth)
             ->whereYear('date', $currentYear)
             ->orderBy('date')
             ->get();
-
+    
         $totalPoints = $operatorPoints->sum('points');
         $totalGoal = $operatorPoints->sum('goal');
-
+    
         $chartData = $operatorPoints->groupBy('date')->map(function ($items) {
             return [
                 'date' => $items->first()->date,
@@ -309,30 +318,67 @@ class DashboardController extends Controller
                 'goal' => $items->sum('goal'),
             ];
         })->values();
-
+    
         $lastLogins = SessionLog::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
-
+    
         $isOnBreak = $user->is_on_break ?? false;
-
-        // Obtener la jornada asignada
-        $assignedShift = $groupOperator ? $groupOperator->shift : 'No asignado';
-
+    
+        $completedPlans = [
+            'mensajes' => WorkPlanDetail::where('user_id', $user->id)
+                ->where('date', $currentDate)
+                ->where('calendar_type', 'mensajes')
+                ->exists(),
+            'icebreakers' => WorkPlanDetail::where('user_id', $user->id)
+                ->where('date', $currentDate)
+                ->where('calendar_type', 'icebreakers')
+                ->exists(),
+            'cartas' => WorkPlanDetail::where('user_id', $user->id)
+                ->where('date', $currentDate)
+                ->where('calendar_type', 'cartas')
+                ->exists(),
+        ];
+    
+        $latestGroupReports = OperativeReport::where('group_id', $assignedGroup->id)
+            ->with('user')
+            ->orderBy('report_date', 'desc')
+            ->take(2)
+            ->get();
+    
+        $latestPointsDate = Point::max('date');
+    
+        // Data for daily group chart
+        $dailyGroupData = Point::select('group_id', DB::raw('SUM(points) as total_points'), DB::raw('SUM(goal) as total_goal'))
+            ->whereDate('date', $latestPointsDate)
+            ->where('shift', $assignedShift)
+            ->groupBy('group_id')
+            ->with('group')
+            ->get();
+    
+        $todayPoints = Point::where('user_id', $user->id)
+            ->whereDate('date', $currentDate)
+            ->sum('points');
+        $yesterdayPoints = Point::where('user_id', $user->id)
+            ->whereDate('date', Carbon::yesterday())
+            ->sum('points');
+    
         return view('dashboard.operator', compact(
             'assignedGroup',
             'assignedGirls',
             'totalPoints',
             'totalGoal',
             'chartData',
-            'currentShift',
             'lastLogins',
-            'groupOperator',
             'isOnBreak',
-            'assignedShift'
+            'assignedShift',
+            'completedPlans',
+            'latestGroupReports',
+            'dailyGroupData',
+            'latestPointsDate',
+            'todayPoints',
+            'yesterdayPoints'
         ));
     }
-
-
 }

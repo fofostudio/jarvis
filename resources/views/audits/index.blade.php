@@ -10,7 +10,7 @@
                 <div class="card bg-dark text-white">
                     <div class="card-body">
                         <h5 class="card-title">Total Auditorías</h5>
-                        <p class="card-text display-4">{{ $audits->count() }}</p>
+                        <p class="card-text display-4">{{ $totalAudits }}</p>
                     </div>
                 </div>
             </div>
@@ -18,7 +18,7 @@
                 <div class="card bg-dark text-white">
                     <div class="card-body">
                         <h5 class="card-title">Promedio Calificación</h5>
-                        <p class="card-text display-4">{{ number_format($audits->avg('general_score'), 1) }}</p>
+                        <p class="card-text display-4">{{ number_format($averageScore, 1) }}</p>
                     </div>
                 </div>
             </div>
@@ -26,15 +26,15 @@
                 <div class="card bg-dark text-white">
                     <div class="card-body">
                         <h5 class="card-title">Auditorías Hoy</h5>
-                        <p class="card-text display-4">{{ $audits->where('review_date', today())->count() }}</p>
+                        <p class="card-text display-4">{{ $auditsToday }}</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card bg-dark text-white">
                     <div class="card-body">
-                        <h5 class="card-title">Operadores Auditados</h5>
-                        <p class="card-text display-4">{{ $audits->unique('operator_id')->count() }}</p>
+                        <h5 class="card-title">Chicas Auditadas</h5>
+                        <p class="card-text display-4">{{ $totalGirlsAudited }}</p>
                     </div>
                 </div>
             </div>
@@ -48,31 +48,36 @@
             <table class="table table-striped table-hover" id="auditsTable">
                 <thead class="thead-dark">
                     <tr>
-                        <th>Fecha de Revisión</th>
-                        <th>Operador</th>
-                        <th>Chica</th>
-                        <th>Cliente</th>
-                        <th>Plataforma</th>
-                        <th>Grupo</th>
-                        <th>Calificación</th>
+                        <th>Fecha de Auditoría</th>
+                        <th>Tipo</th>
+                        <th>Auditor</th>
+                        <th>Grupo/Operador</th>
+                        <th>Chicas Auditadas</th>
+                        <th>Calificación Total</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($audits as $audit)
                         <tr>
-                            <td>{{ $audit->review_date->format('d/m/Y') }}</td>
-                            <td>{{ $audit->operator->name }}</td>
-                            <td>{{ $audit->girl->name }}</td>
-                            <td>{{ $audit->client_name }}</td>
-                            <td>{{ $audit->platform->name }}</td>
-                            <td>{{ $audit->group->name }}</td>
+                            <td>{{ $audit->audit_date->format('d/m/Y') }}</td>
+                            <td>{{ ucfirst($audit->audit_type) }}</td>
+                            <td>{{ $audit->auditor->name }}</td>
+                            <td>
+                                @if($audit->audit_type == 'group')
+                                    {{ $audit->group->name ?? 'N/A' }}
+                                @else
+                                    {{ $audit->operator->name ?? 'N/A' }}
+                                @endif
+                            </td>
+                            <td>{{ $audit->auditDetails->count() }}</td>
                             <td>
                                 <div class="progress">
                                     <div class="progress-bar" role="progressbar"
-                                        style="width: {{ $audit->general_score }}%;"
-                                        aria-valuenow="{{ $audit->general_score }}" aria-valuemin="0" aria-valuemax="100">
-                                        {{ $audit->general_score }}%</div>
+                                        style="width: {{ $audit->total_score }}%;"
+                                        aria-valuenow="{{ $audit->total_score }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ number_format($audit->total_score, 1) }}%
+                                    </div>
                                 </div>
                             </td>
                             <td>
@@ -84,6 +89,8 @@
                 </tbody>
             </table>
         </div>
+        
+        {{ $audits->links() }}
     </div>
 @endsection
 
@@ -117,14 +124,11 @@
                     null,
                     null,
                     null,
-                    null,
-                    {
-                        orderable: false
-                    },
-                    {
-                        orderable: false
-                    }
-                ]
+                    { orderable: false },
+                    { orderable: false }
+                ],
+                "paging": false,
+                "info": false,
             });
         });
     </script>

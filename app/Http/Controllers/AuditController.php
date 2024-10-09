@@ -3,100 +3,249 @@
 namespace App\Http\Controllers;
 
 use App\Models\Audit;
+use App\Models\AuditDetail;
 use App\Models\Girl;
 use App\Models\Group;
+use App\Models\GroupCategory;
+use App\Models\GroupOperator;
 use App\Models\Platform;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AuditController extends Controller
 {
     public function index()
     {
-        $audits = Audit::with(['auditor', 'operator', 'girl', 'platform', 'group'])
-            ->get();
+        $audits = Audit::with(['auditor', 'group', 'operator', 'auditDetails'])
+            ->orderBy('audit_date', 'desc')
+            ->paginate(20);
 
-        return view('audits.index', compact('audits'));
+        $totalAudits = Audit::count();
+        $averageScore = Audit::avg('total_score');
+        $auditsToday = Audit::whereDate('audit_date', today())->count();
+
+        // Esto puede ser una consulta pesada si tienes muchos registros
+        $totalGirlsAudited = AuditDetail::distinct('girl_id')->count('girl_id');
+
+        return view('audits.index', compact('audits', 'totalAudits', 'averageScore', 'auditsToday', 'totalGirlsAudited'));
     }
 
     public function create()
     {
-        $operators = User::where('role', 'operator')->get();
+        // Obtener la categoría "Administración"
+        $adminCategory = GroupCategory::where('name', 'Administracion')
+            ->orderBy('name', 'asc')->first();
+
+        // Filtrar los grupos que no pertenecen a la categoría "Administración"
+        $groups = Group::where('group_category_id', '!=', $adminCategory->id) ->orderBy('name', 'asc')->get();
+        // Obtener operadores que tienen el rol "operator" y excluir los que empiezan con "000"
+        $operators = User::where('role', 'operator')
+            ->where('name', 'not like', '000%') // Reemplaza 'username' por el campo adecuado
+            ->orderBy('name', 'asc') // Ordenar alfabéticamente por username (de A a Z)
+
+            ->get();
         $platforms = Platform::all();
-        $groups = Group::all();
         $checklistItems = $this->getChecklistItems();
 
-        return view('audits.create', compact('operators', 'platforms', 'groups', 'checklistItems'));
+        return view('audits.create', compact('groups', 'operators', 'platforms', 'checklistItems'));
+    }
+
+    public function store(Request $request)
+    {
+        Log::info('Iniciando proceso de creación de auditoría');
+        Log::info('Datos recibidos:', $request->all());
+
+        try {
+            $validatedData = $request->validate([
+                'audit_type' => 'required|in:group,individual',
+                'group_id' => 'required_if:audit_type,group|exists:groups,id',
+                'operator_id' => 'required_if:audit_type,individual|exists:users,id',
+                'audit_date' => 'required|date',
+                'audit_details' => 'required|array',
+                'audit_details.*' => 'required|array',
+                'audit_details.*.girl_id' => 'required|exists:girls,id',
+                'audit_details.*.platform_id' => 'required|exists:platforms,id',
+                'audit_details.*.client_name' => 'required|string',
+                'audit_details.*.client_id' => 'required|string',
+                'audit_details.*.client_status' => 'required|in:Nuevo,Antiguo',
+                'audit_details.*.checklist' => 'required|array',
+                'audit_details.*.general_score' => 'required|numeric|min:0|max:100',
+                'audit_details.*.general_observation' => 'required|string',
+                'audit_details.*.recommendations' => 'nullable|string',
+                'audit_details.*.screenshots' => 'nullable|json',
+            ]);
+
+            Log::info('Datos validados correctamente', $validatedData);
+
+            DB::beginTransaction();
+            Log::info('Iniciando transacción de base de datos');
+
+            $audit = Audit::create([
+                'auditor_id' => auth()->id(),
+                'audit_type' => $validatedData['audit_type'],
+                'group_id' => $validatedData['audit_type'] == 'group' ? $validatedData['group_id'] : null,
+                'operator_id' => $validatedData['audit_type'] == 'individual' ? $validatedData['operator_id'] : null,
+                'audit_date' => $validatedData['audit_date'],
+            ]);
+
+            Log::info('Auditoría principal creada:', $audit->toArray());
+
+            $totalScore = 0;
+            $detailCount = 0;
+
+            foreach ($validatedData['audit_details'] as $detailData) {
+                Log::info("Procesando detalle para la chica ID: {$detailData['girl_id']}", $detailData);
+
+                $auditDetail = new AuditDetail([
+                    'girl_id' => $detailData['girl_id'],
+                    'platform_id' => $detailData['platform_id'],
+                    'client_name' => $detailData['client_name'],
+                    'client_id' => $detailData['client_id'],
+                    'client_status' => $detailData['client_status'],
+                    'checklist' => $detailData['checklist'],
+                    'general_score' => $detailData['general_score'],
+                    'general_observation' => $detailData['general_observation'],
+                    'recommendations' => $detailData['recommendations'] ?? null,
+                    'screenshots' => $detailData['screenshots'] ?? null,
+                ]);
+
+                $auditDetail->audit_id = $audit->id;
+                $auditDetail->operator_id = $validatedData['audit_type'] == 'individual' ? $validatedData['operator_id'] : null;
+                $auditDetail->save();
+
+                Log::info("Detalle de auditoría guardado:", $auditDetail->toArray());
+
+                $totalScore += $auditDetail->general_score;
+                $detailCount++;
+            }
+
+            $averageScore = $detailCount > 0 ? $totalScore / $detailCount : 0;
+            $audit->update(['total_score' => $averageScore]);
+
+            Log::info("Puntuación total actualizada. Promedio: $averageScore");
+
+            DB::commit();
+            Log::info('Transacción de base de datos completada');
+
+            Log::info('Auditoría creada exitosamente');
+            return redirect()->route('audits.index')->with('success', 'Auditoría creada exitosamente.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            Log::error('Error de validación:', $e->errors());
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al crear la auditoría:', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Error al crear la auditoría: ' . $e->getMessage())->withInput();
+        }
+    }
+    public function show(Audit $audit)
+    {
+        $audit->load(['auditor', 'group', 'operator', 'auditDetails.girl', 'auditDetails.platform']);
+        $checklistItems = $this->getChecklistItems();
+
+        return view('audits.show', compact('audit', 'checklistItems'));
     }
     public function edit(Audit $audit)
     {
-        $operators = User::where('role', 'operator')->get();
-        $platforms = Platform::all();
-        $groups = Group::all();
-        $girls = Girl::all();
+        $audit->load(['auditor', 'group', 'operator', 'auditDetails.girl', 'auditDetails.platform']);
         $checklistItems = $this->getChecklistItems();
 
-        return view('audits.edit', compact('audit', 'operators', 'platforms', 'groups', 'girls', 'checklistItems'));
+        return view('audits.edit', compact('audit', 'checklistItems'));
     }
 
     public function update(Request $request, Audit $audit)
     {
         $validatedData = $request->validate([
-            'checklist' => 'required|array',
-            'checklist.*' => 'boolean',
-            'general_score' => 'required|numeric|min:0|max:100',
-            'general_observation' => 'required|string',
-            'recommendations' => 'nullable|string',
+            'audit_date' => 'required|date',
+            'audit_details' => 'required|array',
+            'audit_details.*.id' => 'required|exists:audit_details,id',
+            'audit_details.*.platform_id' => 'required|exists:platforms,id',
+            'audit_details.*.client_name' => 'required|string',
+            'audit_details.*.client_id' => 'required|string',
+            'audit_details.*.client_status' => 'required|in:Nuevo,Antiguo',
+            'audit_details.*.checklist' => 'required|array',
+            'audit_details.*.general_score' => 'required|numeric|min:0|max:100',
+            'audit_details.*.general_observation' => 'required|string',
+            'audit_details.*.recommendations' => 'nullable|string',
+            'audit_details.*.screenshots' => 'nullable|json',
         ]);
 
-        $audit->update($validatedData);
+        DB::beginTransaction();
 
-        return redirect()->route('audits.index', $audit)->with('success', 'Auditoría actualizada exitosamente.');
+        try {
+            $audit->update([
+                'audit_date' => $validatedData['audit_date'],
+            ]);
+
+            $totalScore = 0;
+
+            foreach ($validatedData['audit_details'] as $detailData) {
+                $auditDetail = AuditDetail::findOrFail($detailData['id']);
+                $auditDetail->update($detailData);
+
+                $totalScore += $auditDetail->general_score;
+            }
+
+            $audit->update(['total_score' => $totalScore / count($validatedData['audit_details'])]);
+
+            DB::commit();
+
+            return redirect()->route('audits.show', $audit)->with('success', 'Auditoría actualizada exitosamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error al actualizar la auditoría: ' . $e->getMessage())->withInput();
+        }
     }
 
     public function destroy(Audit $audit)
     {
-        $audit->delete();
-
-        return redirect()->route('audits.index')->with('success', 'Auditoría eliminada exitosamente.');
+        try {
+            $audit->auditDetails()->delete();
+            $audit->delete();
+            return redirect()->route('audits.index')->with('success', 'Auditoría eliminada exitosamente.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al eliminar la auditoría: ' . $e->getMessage());
+        }
     }
 
-    public function store(Request $request)
+    public function getOperatorsByGroup(Request $request)
     {
-        $validatedData = $request->validate([
-            'operator_id' => 'required|exists:users,id',
-            'conversation_date' => 'required|date',
-            'review_date' => 'required|date',
-            'platform_id' => 'required|exists:platforms,id',
-            'group_id' => 'required|exists:groups,id',
-            'girl_id' => 'required|exists:girls,internal_id',
-            'client_name' => 'required|string',
-            'client_id' => 'required|string',
-            'client_status' => 'required|string',
-            'checklist' => 'required|array',
-            'checklist.*' => 'required|boolean',
-            'general_score' => 'required|numeric|min:0|max:100',
-            'general_observation' => 'required|string',
-            'recommendations' => 'nullable|string',
-            'screenshots' => 'nullable|json',
-        ]);
-
-        // Buscar la chica por su internal_id y obtener su id de la base de datos
-        $girl = Girl::where('internal_id', $validatedData['girl_id'])->firstOrFail();
-        $validatedData['girl_id'] = $girl->id;
-
-        $validatedData['auditor_id'] = auth()->id();
-        $validatedData['screenshots'] = json_decode($request->screenshots, true);
-
-        // Asegurarse de que platform_id y group_id estén correctamente asignados
-        $validatedData['platform_id'] = $request->input('platform_id');
-        $validatedData['group_id'] = $request->input('group_id');
-
-        Audit::create($validatedData);
-
-        return redirect()->route('audits.index')->with('success', 'Auditoría creada exitosamente.');
+        $groupId = $request->input('group_id');
+        $operators = User::where('role', 'operator')->where('group_id', $groupId)->get();
+        return response()->json($operators);
     }
 
+    public function getGirlsByGroup(Request $request)
+    {
+        $auditType = $request->input('audit_type');
+        $groupId = $request->input('group_id');
+        $operatorId = $request->input('operator_id');
+
+        if ($auditType === 'individual') {
+            // Para auditorías individuales, obtenemos el grupo del operador
+            $groupOperator = GroupOperator::where('user_id', $operatorId)->first();
+            if ($groupOperator) {
+                $groupId = $groupOperator->group_id;
+            }
+        }
+
+        $girls = Girl::with('platform')
+            ->where('group_id', $groupId)
+            ->get()
+            ->map(function ($girl) {
+                return [
+                    'id' => $girl->id,
+                    'name' => $girl->name,
+                    'platform_id' => $girl->platform_id,
+                    'platform_name' => $girl->platform ? $girl->platform->name : null
+                ];
+            });
+
+        return response()->json($girls);
+    }
     private function getChecklistItems()
     {
         return [
@@ -112,11 +261,5 @@ class AuditController extends Controller
             'initiates_hot_chat' => ['label' => 'Inicia/incentiva chat caliente', 'score' => 10],
             'conversation_coherence' => ['label' => 'Coherencia en conversación', 'score' => 5],
         ];
-    }
-
-    public function show(Audit $audit)
-    {
-        $checklistItems = $this->getChecklistItems();
-        return view('audits.show', compact('audit', 'checklistItems'));
     }
 }

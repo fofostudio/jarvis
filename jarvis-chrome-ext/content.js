@@ -20,15 +20,7 @@ function loadPlatformScript(platform) {
     });
 }
 
-// Detecta la plataforma actual y carga el script correspondiente
-const currentPlatform = detectCurrentPlatform();
-if (currentPlatform) {
-    loadPlatformScript(currentPlatform)
-        .then(() => console.log(`Script de ${currentPlatform} cargado`))
-        .catch((error) =>
-            console.error(`Error cargando script de ${currentPlatform}:`, error)
-        );
-}
+// Detecta la plataforma actual
 function detectCurrentPlatform() {
     const url = window.location.href.toLowerCase();
 
@@ -52,9 +44,10 @@ function detectCurrentPlatform() {
         return "lovedatez";
     }
 
-    // Si no se reconoce la plataforma, devuelve null o un valor por defecto
+    // Si no se reconoce la plataforma, devuelve null
     return null;
 }
+
 // Función para inicializar las funciones de la plataforma
 async function initializePlatform(platform, userInfo) {
     try {
@@ -80,9 +73,7 @@ async function executeTask(task) {
     if (window.platformFunctions[task.name]) {
         try {
             console.log(`Ejecutando tarea: ${task.name}`);
-            const result = await window.platformFunctions[task.name](
-                task.params
-            );
+            const result = await window.platformFunctions[task.name](task.params);
             port.postMessage({
                 action: "taskCompleted",
                 taskName: task.name,
@@ -184,6 +175,26 @@ window.addEventListener(
     },
     false
 );
+
+// Detectar y cargar el script de la plataforma
+const currentPlatform = detectCurrentPlatform();
+if (currentPlatform) {
+    loadPlatformScript(currentPlatform)
+        .then(() => {
+            console.log(`Script de ${currentPlatform} cargado`);
+            // Inicializar la plataforma después de cargar el script
+            chrome.storage.local.get('userInfo', (result) => {
+                if (result.userInfo) {
+                    initializePlatform(currentPlatform, result.userInfo);
+                } else {
+                    console.warn('No se encontró información del usuario para inicializar la plataforma');
+                }
+            });
+        })
+        .catch((error) =>
+            console.error(`Error cargando script de ${currentPlatform}:`, error)
+        );
+}
 
 // Notificar al background script que el content script está listo
 port.postMessage({ action: "contentScriptReady" });

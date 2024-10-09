@@ -14,6 +14,9 @@ use Carbon\Carbon;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Log;
+use Laravel\Sanctum\HasApiTokens;
+
 
 class AuthenticatedSessionController extends Controller
 {
@@ -31,18 +34,58 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
-
         $this->logSession($request);
+        $token = $request->user()->createToken('auth_token')->plainTextToken;
+        $cookie = cookie('sanctum_token', $token, 60 * 24, null, null, true, true, false, 'Strict');
+        return redirect()->intended(RouteServiceProvider::HOME)->withCookie($cookie);
+    }
+    public function getAuthenticatedUser(Request $request)
+    {
+        try {
+            $user = $request->user();
 
-        // Generate JWT token
-        $token = JWTAuth::fromUser(Auth::user());
+            if (!$user) {
+                return response()->json(['success' => false, 'error' => 'User not found'], 404);
+            }
 
-        // Store token in a secure HTTP-only cookie
-        Cookie::queue('jwt_token', $token, 60 * 24, null, null, true, true, false, 'Strict');
+            // Cargar las relaciones necesarias
+            $user->load(['groupOperators.group.girls', 'groupOperators.group.platforms']);
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+            $userInfo = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'groups' => $user->groupOperators->map(function ($groupOperator) {
+                    $group = $groupOperator->group;
+                    return [
+                        'id' => $group->id,
+                        'name' => $group->name,
+                        'shift' => $groupOperator->shift,
+                        'girls' => $group->girls->map(function ($girl) {
+                            return [
+                                'id' => $girl->id,
+                                'name' => $girl->name,
+                                'internal_id' => $girl->internal_id,
+                                'username' => $girl->username,
+                                'password' => $girl->password, // Asegúrate de que esto esté encriptado
+                                'platform' => $girl->platform->name,
+                            ];
+                        }),
+                        'platforms' => $group->platforms->pluck('name')->unique(),
+                    ];
+                }),
+                'platforms' => $user->groupOperators->flatMap(function ($groupOperator) {
+                    return $groupOperator->group->platforms;
+                })->pluck('name')->unique(),
+            ];
+
+            return response()->json(['success' => true, 'user' => $userInfo]);
+        } catch (\Exception $e) {
+            Log::error('Error getting user info: ' . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['success' => false, 'error' => 'Internal server error: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -53,14 +96,10 @@ class AuthenticatedSessionController extends Controller
         $this->logLogout();
 
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
-
         // Remove the JWT cookie
-        // Remove the JWT cookie
-        Cookie::queue(Cookie::forget('jwt_token'));
+        Cookie::queue(Cookie::forget('sanctum_token'));
 
         return redirect('/');
     }
@@ -70,29 +109,29 @@ class AuthenticatedSessionController extends Controller
      */
     public function apiLogin(Request $request): JsonResponse
     {
-        $credentials = $request->only('email', 'password');
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
 
-        if (!$token = JWTAuth::attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+
+            $user = Auth::user();
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'user' => $user,
+                'token' => $token
+            ])->withCookie(cookie('auth_token', $token, 60 * 24, null, null, true, true, false, 'Strict'));
         }
 
-        $user = auth('api')->user();
-
-        $tokenData = [
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => JWTAuth::factory()->getTTL() * 60
-        ];
-
-        $this->logSession($request);
-
         return response()->json([
-            'success' => true,
-            'user' => $user,
-            'token' => $tokenData
-        ]);
+            'success' => false,
+            'message' => 'The provided credentials are incorrect.'
+        ], 401);
     }
-
 
     /**
      * Log the user out of the API application.
